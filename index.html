@@ -6,7 +6,6 @@
     <title>PMO Project Hub - Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -62,6 +61,31 @@
         .dashboard-card.purple .card-value { color: white; font-size: 2.5rem; }
         .dashboard-card .card-sub { font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; }
         .dashboard-card.purple .card-sub { color: rgba(255,255,255,0.8); }
+
+        /* Estilos para o PDF de cronograma */
+        .pdf-cronograma { font-family: 'Inter', sans-serif; padding: 40px; }
+        .pdf-cronograma h1 { color: #1e40af; font-size: 24px; margin-bottom: 8px; }
+        .pdf-cronograma .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+        .pdf-cronograma .fase { margin-bottom: 24px; }
+        .pdf-cronograma .fase-titulo { background: #1e40af; color: white; padding: 8px 16px; border-radius: 6px; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .pdf-cronograma .fase-titulo.iniciacao { background: #10b981; }
+        .pdf-cronograma .fase-titulo.planejamento { background: #3b82f6; }
+        .pdf-cronograma .fase-titulo.execucao { background: #f59e0b; }
+        .pdf-cronograma .fase-titulo.encerramento { background: #8b5cf6; }
+        .pdf-cronograma table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .pdf-cronograma th { background: #f3f4f6; padding: 8px 12px; text-align: left; border: 1px solid #d1d5db; font-weight: 600; }
+        .pdf-cronograma td { padding: 6px 12px; border: 1px solid #d1d5db; }
+        .pdf-cronograma .status-concluido { color: #10b981; font-weight: 600; }
+        .pdf-cronograma .status-andamento { color: #f59e0b; font-weight: 600; }
+        .pdf-cronograma .status-pendente { color: #ef4444; font-weight: 600; }
+        .pdf-cronograma .footer { margin-top: 24px; padding-top: 16px; border-top: 2px solid #e5e7eb; color: #9ca3af; font-size: 12px; text-align: center; }
+
+        /* Badge Admin */
+        .badge-admin { background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .btn-redefinir { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-redefinir:hover { background: #d97706; }
+        .btn-redefinir-admin { background: #8b5cf6; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-redefinir-admin:hover { background: #7c3aed; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 flex h-screen overflow-hidden">
@@ -126,6 +150,122 @@
                 <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-sign-in-alt mr-2"></i>Entrar
                 </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="mostrarRedefinirSenha()" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
+                    <span class="text-gray-400 mx-2">|</span>
+                    <a href="#" onclick="mostrarCadastro()" class="text-blue-600 hover:underline">Criar conta</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO -->
+    <div id="cadastro-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-plus text-4xl text-green-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Criar Nova Conta</h2>
+                <p class="text-sm text-gray-500 mt-2">Preencha os dados para se cadastrar</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                    <input type="text" id="cadastro-nome" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Seu nome">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="cadastro-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="cadastro-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+                    <input type="password" id="cadastro-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                    <select id="cadastro-grupo" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="gerente">Gerente</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="assistente">Assistente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div id="cadastro-error" class="text-red-600 text-sm hidden"></div>
+                <button onclick="fazerCadastro()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-user-plus mr-2"></i>Cadastrar
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalCadastro()" class="text-gray-500 hover:underline">Voltar ao login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE REDEFINIÇÃO DE SENHA (para o próprio usuário) -->
+    <div id="redefinir-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-key text-4xl text-amber-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha</h2>
+                <p class="text-sm text-gray-500 mt-2">Digite seu e-mail para redefinir a senha</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="redefinir-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+                    <input type="password" id="redefinir-nova-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="redefinir-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div id="redefinir-error" class="text-red-600 text-sm hidden"></div>
+                <div id="redefinir-success" class="text-green-600 text-sm hidden">
+                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
+                </div>
+                <button onclick="enviarRedefinicao()" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-save mr-2"></i>Redefinir Senha
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalRedefinir()" class="text-gray-500 hover:underline">Voltar ao login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE REDEFINIÇÃO DE SENHA POR ADMIN -->
+    <div id="redefinir-admin-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-shield text-4xl text-purple-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha do Usuário</h2>
+                <p class="text-sm text-gray-500 mt-2" id="redefinir-admin-nome">Usuário: </p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+                    <input type="password" id="redefinir-admin-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="redefinir-admin-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div id="redefinir-admin-error" class="text-red-600 text-sm hidden"></div>
+                <div id="redefinir-admin-success" class="text-green-600 text-sm hidden">
+                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
+                </div>
+                <button onclick="salvarRedefinicaoAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-save mr-2"></i>Salvar Nova Senha
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalRedefinirAdmin()" class="text-gray-500 hover:underline">Cancelar</a>
+                </div>
             </div>
         </div>
     </div>
@@ -155,7 +295,7 @@
             </div>
             <div class="flex gap-2 flex-wrap">
                 <button onclick="exportarProjeto()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md font-semibold transition flex items-center">
-                    <i class="fas fa-file-export mr-2"></i> Exportar
+                    <i class="fas fa-file-pdf mr-2"></i> Exportar Cronograma
                 </button>
                 <button onclick="novoProjeto()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md font-semibold transition flex items-center">
                     <i class="fas fa-plus mr-2"></i> Novo Projeto
@@ -701,24 +841,51 @@
     </div>
 
     <script>
-
-   // ==========================================
+        // ==========================================
         // ⚠️ CONFIGURAÇÃO DO SUPABASE
         // SUBSTITUA PELAS SUAS CREDENCIAIS!
         // ==========================================
         const SUPABASE_URL = 'sb_publishable_6FC1dhL0rg6A9G7Ji71Iyg_KbKUml01';
         const SUPABASE_KEY = 'sb_secret_sq_vRtQ_MpaNtJMrU2L6Qg_zaquYGOi';
 
-         
+
+
         // ==========================================
-        // SISTEMA DE USUÁRIOS (LOCAL)
+        // SISTEMA DE USUÁRIOS COM SENHA
         // ==========================================
-        const usuariosSistema = {
-            'carlos@empresa.com': { nome: 'Carlos Silva', grupo: 'gerente', senha: 'carlos123', email: 'carlos@empresa.com' },
-            'maria@empresa.com': { nome: 'Maria Santos', grupo: 'assistente', senha: 'maria123', email: 'maria@empresa.com' },
-            'joao@empresa.com': { nome: 'João Costa', grupo: 'supervisor', senha: 'joao123', email: 'joao@empresa.com' },
-            'admin@empresa.com': { nome: 'Admin', grupo: 'admin', senha: 'admin123', email: 'admin@empresa.com' }
-        };
+        let usuariosSistema = {};
+        
+        // Carregar usuários do localStorage
+        function carregarUsuarios() {
+            try {
+                const salvos = localStorage.getItem('pmo_usuarios');
+                if (salvos) {
+                    usuariosSistema = JSON.parse(salvos);
+                } else {
+                    // Usuário padrão
+                    usuariosSistema = {
+                        'admin@empresa.com': { 
+                            nome: 'Administrador', 
+                            grupo: 'admin', 
+                            senha: 'admin123', 
+                            email: 'admin@empresa.com' 
+                        }
+                    };
+                    salvarUsuarios();
+                }
+            } catch(e) {
+                usuariosSistema = {};
+                salvarUsuarios();
+            }
+        }
+        
+        function salvarUsuarios() {
+            try {
+                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+            } catch(e) {
+                console.log('Erro ao salvar usuários:', e);
+            }
+        }
 
         let usuarioLogado = null;
         let perfilAtual = null;
@@ -809,7 +976,7 @@
         }
 
         // ==========================================
-        // LOGIN
+        // FUNÇÕES DE LOGIN
         // ==========================================
         function toggleLogin() {
             if (usuarioLogado) {
@@ -857,11 +1024,289 @@
                 alert(`Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
             }
         }
 
+        // ==========================================
+        // FUNÇÕES DE CADASTRO
+        // ==========================================
+        function mostrarCadastro() {
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('cadastro-modal').classList.add('active');
+            document.getElementById('cadastro-error').classList.add('hidden');
+            document.getElementById('cadastro-nome').value = '';
+            document.getElementById('cadastro-email').value = '';
+            document.getElementById('cadastro-senha').value = '';
+            document.getElementById('cadastro-confirmar').value = '';
+        }
+
+        function fecharModalCadastro() {
+            document.getElementById('cadastro-modal').classList.remove('active');
+            document.getElementById('login-modal').classList.add('active');
+        }
+
+        function fazerCadastro() {
+            const nome = document.getElementById('cadastro-nome').value.trim();
+            const email = document.getElementById('cadastro-email').value.trim().toLowerCase();
+            const senha = document.getElementById('cadastro-senha').value;
+            const confirmar = document.getElementById('cadastro-confirmar').value;
+            const grupo = document.getElementById('cadastro-grupo').value;
+            const errorDiv = document.getElementById('cadastro-error');
+
+            errorDiv.classList.add('hidden');
+
+            if (!nome || !email || !senha || !confirmar) {
+                errorDiv.textContent = 'Preencha todos os campos!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (senha.length < 6) {
+                errorDiv.textContent = 'A senha deve ter pelo menos 6 caracteres!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (senha !== confirmar) {
+                errorDiv.textContent = 'As senhas não coincidem!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (usuariosSistema[email]) {
+                errorDiv.textContent = 'Este e-mail já está cadastrado!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Criar novo usuário
+            usuariosSistema[email] = { nome, grupo, senha, email };
+            salvarUsuarios();
+
+            alert(`Conta criada com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
+
+            // Fechar modal de cadastro e voltar ao login
+            document.getElementById('cadastro-modal').classList.remove('active');
+            document.getElementById('login-modal').classList.add('active');
+            document.getElementById('login-email').value = email;
+            document.getElementById('login-senha').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+        }
+
+        // ==========================================
+        // FUNÇÕES DE REDEFINIÇÃO DE SENHA (usuário comum)
+        // ==========================================
+        function mostrarRedefinirSenha() {
+            document.getElementById('login-modal').classList.remove('active');
+            document.getElementById('redefinir-modal').classList.add('active');
+            document.getElementById('redefinir-error').classList.add('hidden');
+            document.getElementById('redefinir-success').classList.add('hidden');
+            document.getElementById('redefinir-email').value = '';
+            document.getElementById('redefinir-nova-senha').value = '';
+            document.getElementById('redefinir-confirmar').value = '';
+        }
+
+        function fecharModalRedefinir() {
+            document.getElementById('redefinir-modal').classList.remove('active');
+            document.getElementById('login-modal').classList.add('active');
+        }
+
+        function enviarRedefinicao() {
+            const email = document.getElementById('redefinir-email').value.trim().toLowerCase();
+            const novaSenha = document.getElementById('redefinir-nova-senha').value;
+            const confirmar = document.getElementById('redefinir-confirmar').value;
+            const errorDiv = document.getElementById('redefinir-error');
+            const successDiv = document.getElementById('redefinir-success');
+
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            if (!email) {
+                errorDiv.textContent = 'Digite seu e-mail!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (!usuariosSistema[email]) {
+                errorDiv.textContent = 'E-mail não encontrado no sistema!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (novaSenha.length < 6) {
+                errorDiv.textContent = 'A senha deve ter pelo menos 6 caracteres!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (novaSenha !== confirmar) {
+                errorDiv.textContent = 'As senhas não coincidem!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Redefinir senha
+            usuariosSistema[email].senha = novaSenha;
+            salvarUsuarios();
+
+            successDiv.textContent = 'Senha redefinida com sucesso!';
+            successDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                fecharModalRedefinir();
+                document.getElementById('login-email').value = email;
+                document.getElementById('login-senha').value = '';
+                alert('Senha redefinida com sucesso! Faça login com a nova senha.');
+            }, 1500);
+        }
+
+        // ==========================================
+        // FUNÇÕES DE REDEFINIÇÃO DE SENHA POR ADMIN
+        // ==========================================
+        let usuarioAdminRedefinindo = null;
+
+        function abrirRedefinirAdmin(email) {
+            const usuario = usuariosSistema[email];
+            if (!usuario) {
+                alert('Usuário não encontrado!');
+                return;
+            }
+
+            usuarioAdminRedefinindo = email;
+            document.getElementById('redefinir-admin-nome').textContent = `Usuário: ${usuario.nome} (${email})`;
+            document.getElementById('redefinir-admin-senha').value = '';
+            document.getElementById('redefinir-admin-confirmar').value = '';
+            document.getElementById('redefinir-admin-error').classList.add('hidden');
+            document.getElementById('redefinir-admin-success').classList.add('hidden');
+            document.getElementById('redefinir-admin-modal').classList.add('active');
+        }
+
+        function fecharModalRedefinirAdmin() {
+            document.getElementById('redefinir-admin-modal').classList.remove('active');
+            usuarioAdminRedefinindo = null;
+        }
+
+        function salvarRedefinicaoAdmin() {
+            const novaSenha = document.getElementById('redefinir-admin-senha').value;
+            const confirmar = document.getElementById('redefinir-admin-confirmar').value;
+            const errorDiv = document.getElementById('redefinir-admin-error');
+            const successDiv = document.getElementById('redefinir-admin-success');
+
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            if (!usuarioAdminRedefinindo) {
+                errorDiv.textContent = 'Erro: usuário não selecionado!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (novaSenha.length < 6) {
+                errorDiv.textContent = 'A senha deve ter pelo menos 6 caracteres!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (novaSenha !== confirmar) {
+                errorDiv.textContent = 'As senhas não coincidem!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Redefinir senha do usuário
+            usuariosSistema[usuarioAdminRedefinindo].senha = novaSenha;
+            salvarUsuarios();
+
+            successDiv.textContent = `Senha redefinida com sucesso para ${usuariosSistema[usuarioAdminRedefinindo].nome}!`;
+            successDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                fecharModalRedefinirAdmin();
+                alert('Senha redefinida com sucesso!');
+                renderizarUsuarios();
+            }, 1500);
+        }
+
+        // ==========================================
+        // FUNÇÃO PARA ADICIONAR USUÁRIO (CORRIGIDA)
+        // ==========================================
+        function addUsuario() {
+            // Verifica se o usuário tem permissão
+            if (perfilAtual !== 'admin' && perfilAtual !== 'supervisor') {
+                alert('Apenas Administradores e Supervisores podem adicionar usuários!');
+                return;
+            }
+
+            // Abrir modal de cadastro para o admin adicionar usuário
+            document.getElementById('cadastro-modal').classList.add('active');
+            document.getElementById('cadastro-error').classList.add('hidden');
+            document.getElementById('cadastro-nome').value = '';
+            document.getElementById('cadastro-email').value = '';
+            document.getElementById('cadastro-senha').value = '';
+            document.getElementById('cadastro-confirmar').value = '';
+            
+            // Mudar título do modal para indicar que é admin adicionando
+            document.querySelector('#cadastro-modal .text-center h2').textContent = 'Adicionar Novo Usuário';
+            document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para criar um novo usuário no sistema';
+        }
+
+        // Sobrescrever a função fazerCadastro para funcionar tanto para auto-cadastro quanto para admin
+        const fazerCadastroOriginal = fazerCadastro;
+        fazerCadastro = function() {
+            const nome = document.getElementById('cadastro-nome').value.trim();
+            const email = document.getElementById('cadastro-email').value.trim().toLowerCase();
+            const senha = document.getElementById('cadastro-senha').value;
+            const confirmar = document.getElementById('cadastro-confirmar').value;
+            const grupo = document.getElementById('cadastro-grupo').value;
+            const errorDiv = document.getElementById('cadastro-error');
+
+            errorDiv.classList.add('hidden');
+
+            if (!nome || !email || !senha || !confirmar) {
+                errorDiv.textContent = 'Preencha todos os campos!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (senha.length < 6) {
+                errorDiv.textContent = 'A senha deve ter pelo menos 6 caracteres!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (senha !== confirmar) {
+                errorDiv.textContent = 'As senhas não coincidem!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (usuariosSistema[email]) {
+                errorDiv.textContent = 'Este e-mail já está cadastrado!';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Criar novo usuário
+            usuariosSistema[email] = { nome, grupo, senha, email };
+            salvarUsuarios();
+
+            alert(`Usuário criado com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
+
+            // Fechar modal e atualizar lista
+            document.getElementById('cadastro-modal').classList.remove('active');
+            renderizarUsuarios();
+            
+            // Restaurar título do modal
+            document.querySelector('#cadastro-modal .text-center h2').textContent = 'Criar Nova Conta';
+            document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para se cadastrar';
+        };
+
         // Permitir login com Enter
         document.addEventListener('DOMContentLoaded', function() {
+            carregarUsuarios();
+            
+            // Login com Enter
             const senhaInput = document.getElementById('login-senha');
             if (senhaInput) {
                 senhaInput.addEventListener('keypress', function(e) {
@@ -873,6 +1318,29 @@
                 emailInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') document.getElementById('login-senha').focus();
                 });
+            }
+
+            // Cadastro com Enter
+            document.getElementById('cadastro-confirmar').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') fazerCadastro();
+            });
+
+            // Redefinir com Enter
+            document.getElementById('redefinir-confirmar').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') enviarRedefinicao();
+            });
+
+            // Redefinir Admin com Enter
+            document.getElementById('redefinir-admin-confirmar').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') salvarRedefinicaoAdmin();
+            });
+
+            // Inicializar
+            popularFiltro();
+            
+            // Se não houver usuário logado, mostrar modal de login
+            if (!usuarioLogado) {
+                document.getElementById('login-modal').classList.add('active');
             }
         });
 
@@ -918,6 +1386,116 @@
             });
             
             return total > 0 ? Math.round((concluidas / total) * 100) : 0;
+        }
+
+        // ==========================================
+        // EXPORTAÇÃO PARA PDF (APENAS CRONOGRAMA)
+        // ==========================================
+        function exportarProjeto() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+
+            // Criar elemento para o PDF
+            const element = document.createElement('div');
+            element.className = 'pdf-cronograma';
+            
+            // Cabeçalho
+            let html = `
+                <h1>📋 Cronograma do Projeto</h1>
+                <div class="subtitle">
+                    <strong>${projeto.nome}</strong> | ${projeto.cliente} | Gerente: ${projeto.gerente}
+                </div>
+                <div style="margin-bottom: 20px; color: #6b7280; font-size: 13px;">
+                    Budget: ${formatarMoeda(projeto.orcamento)} | Data: ${new Date().toLocaleDateString('pt-BR')}
+                </div>
+            `;
+
+            // Fases
+            const fases = [
+                { id: 'iniciacao', titulo: '1. FASE DE INICIAÇÃO', cor: 'iniciacao' },
+                { id: 'planejamento', titulo: '2. FASE DE PLANEJAMENTO', cor: 'planejamento' },
+                { id: 'execucao', titulo: '3. FASE DE EXECUÇÃO', cor: 'execucao' },
+                { id: 'encerramento', titulo: '4. FASE DE ENCERRAMENTO', cor: 'encerramento' }
+            ];
+
+            let hasTasks = false;
+
+            fases.forEach(fase => {
+                const tarefas = projeto[fase.id] || [];
+                if (tarefas.length > 0) {
+                    hasTasks = true;
+                    html += `
+                        <div class="fase">
+                            <div class="fase-titulo ${fase.cor}">${fase.titulo}</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">ID</th>
+                                        <th style="width: 35%;">Atividade</th>
+                                        <th style="width: 15%;">Início</th>
+                                        <th style="width: 10%;">Duração</th>
+                                        <th style="width: 15%;">Término</th>
+                                        <th style="width: 15%;">Responsável</th>
+                                        <th style="width: 10%;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    tarefas.forEach(t => {
+                        const statusClass = t.status === 'Concluído' ? 'status-concluido' : 
+                                           t.status === 'Em Andamento' ? 'status-andamento' : 'status-pendente';
+                        html += `
+                            <tr>
+                                <td>${t.id}</td>
+                                <td><strong>${t.atividade}</strong></td>
+                                <td>${t.inicio || '-'}</td>
+                                <td>${t.duracao || '-'}</td>
+                                <td>${t.termino || '-'}</td>
+                                <td>${t.responsavel || '-'}</td>
+                                <td class="${statusClass}">${t.status || 'Pendente'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasTasks) {
+                html += `
+                    <div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 16px;">
+                        <i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+                        Nenhuma tarefa cadastrada nas fases do projeto.
+                    </div>
+                `;
+            }
+
+            // Rodapé
+            html += `
+                <div class="footer">
+                    Documento gerado automaticamente pelo PMO Project Hub<br>
+                    ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+                </div>
+            `;
+
+            element.innerHTML = html;
+
+            // Configurações do PDF
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `Cronograma_${projeto.nome.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Gerar PDF
+            html2pdf().set(opt).from(element).save();
         }
 
         // ==========================================
@@ -967,7 +1545,7 @@
             let titulo = '';
             
             if (tipo === 'todos-meus') {
-                projetosFiltrados = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+                projetosFiltrados = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado?.nome);
                 titulo = 'Meus Projetos';
             } else if (tipo === 'todos-time') {
                 projetosFiltrados = Object.entries(projetos);
@@ -1084,159 +1662,62 @@
             atualizarMonitoramento();
         }
 
-        function renderizarMeusProjetos() {
-            const tbody = document.getElementById('tbody-meus-projetos');
+        // ==========================================
+        // RENDERIZAÇÃO DE USUÁRIOS (COM BOTÃO REDEFINIR PARA TODOS)
+        // ==========================================
+        function renderizarUsuarios() {
+            const tbody = document.getElementById('tbody-usuarios');
             tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
             
-            if (!usuarioLogado) return;
-            
-            const projetosDoGerente = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
-            
-            projetosDoGerente.forEach(([id, projeto]) => {
-                const statusClass = projeto.status === 'no-prazo' ? 'bg-green-100 text-green-800' :
-                                   projeto.status === 'atencao' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
-                const statusText = projeto.status === 'no-prazo' ? 'No Prazo' :
-                                  projeto.status === 'atencao' ? 'Atenção' : 'Crítico';
+            // Mostrar usuários do sistema (globais)
+            Object.entries(usuariosSistema).forEach(([email, usuario]) => {
+                // Verificar se o usuário está associado ao projeto atual
+                const noProjeto = projeto.usuarios?.some(u => u.email === email);
+                // Mostrar todos os usuários, independente de estar no projeto
                 
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50 transition';
+                const isAdmin = usuario.grupo === 'admin';
+                const isCurrentUser = usuarioLogado && usuarioLogado.email === email;
+                
+                // Verificar permissão para redefinir senha
+                // Admin pode redefinir qualquer um (inclusive outros admins)
+                // Supervisor pode redefinir não-admins
+                const podeRedefinir = perfilAtual === 'admin' || (perfilAtual === 'supervisor' && !isAdmin);
+                
+                // Se for o próprio usuário, sempre pode redefinir (via outro modal)
+                const podeRedefinirProprio = isCurrentUser;
+                
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-medium">${projeto.nome}</td>
-                    <td class="px-4 py-3">${projeto.cliente}</td>
-                    <td class="px-4 py-3 font-semibold">${formatarMoeda(projeto.orcamento)}</td>
-                    <td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${statusText}</span></td>
+                    <td class="px-4 py-3 flex items-center">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random&size=32" class="rounded-full mr-3">
+                        <span class="font-medium">${usuario.nome}</span>
+                        ${isAdmin ? '<span class="badge-admin ml-2">Admin</span>' : ''}
+                        ${noProjeto ? '' : '<span class="text-xs text-gray-400 ml-2">(Fora do projeto)</span>'}
+                    </td>
+                    <td class="px-4 py-3">${usuario.email}</td>
+                    <td class="px-4 py-3"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold uppercase">${usuario.grupo}</span></td>
+                    <td class="px-4 py-3 text-xs">${permissoesTexto[usuario.grupo] || 'Sem permissões'}</td>
                     <td class="px-4 py-3 text-center">
-                        <button onclick="openEditarProjeto('${id}')" class="text-blue-600 hover:text-blue-800 mx-1" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="removerProjeto('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Remover">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${podeRedefinirProprio ? `
+                            <button onclick="abrirRedefinirAdmin('${usuario.email}')" class="btn-redefinir-admin" title="Redefinir sua senha">
+                                <i class="fas fa-key mr-1"></i>Redefinir Senha
+                            </button>
+                        ` : podeRedefinir ? `
+                            <button onclick="abrirRedefinirAdmin('${usuario.email}')" class="btn-redefinir" title="Redefinir senha do usuário">
+                                <i class="fas fa-key mr-1"></i>Redefinir Senha
+                            </button>
+                        ` : isAdmin ? '<span class="text-xs text-gray-400">Admin</span>' : '<span class="text-xs text-gray-400">-</span>'}
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function openEditarProjeto(projetoId) {
-            const projeto = projetos[projetoId];
-            if (!projeto) return;
-            
-            document.getElementById('edit-projeto-id').value = projetoId;
-            document.getElementById('edit-projeto-nome').value = projeto.nome;
-            document.getElementById('edit-projeto-cliente').value = projeto.cliente;
-            document.getElementById('edit-projeto-budget').value = projeto.orcamento;
-            document.getElementById('edit-projeto-status').value = projeto.status;
-            
-            document.getElementById('editar-projeto-modal').classList.add('active');
-        }
-
-        function closeEditarProjetoModal() {
-            document.getElementById('editar-projeto-modal').classList.remove('active');
-        }
-
-        function salvarEdicaoProjeto() {
-            const projetoId = document.getElementById('edit-projeto-id').value;
-            const projeto = projetos[projetoId];
-            if (!projeto) return;
-            
-            projeto.nome = document.getElementById('edit-projeto-nome').value;
-            projeto.cliente = document.getElementById('edit-projeto-cliente').value;
-            projeto.orcamento = parseValorBrasileiro(document.getElementById('edit-projeto-budget').value);
-            projeto.status = document.getElementById('edit-projeto-status').value;
-            
-            salvarDados();
-            closeEditarProjetoModal();
-            renderizarMeusProjetos();
-            popularFiltro();
-            trocarProjeto(projetoId);
-            
-            alert('Projeto atualizado com sucesso!');
-        }
-
-        function removerProjeto(projetoId) {
-            if (confirm('Tem certeza que deseja remover este projeto?')) {
-                delete projetos[projetoId];
-                salvarDados();
-                renderizarMeusProjetos();
-                popularFiltro();
-                
-                if (projetoId === projetoAtual) {
-                    const primeiroProjeto = Object.keys(projetos)[0];
-                    if (primeiroProjeto) {
-                        trocarProjeto(primeiroProjeto);
-                    }
-                }
-                
-                alert('Projeto removido com sucesso!');
-            }
-        }
-
-        function atualizarMetricas() {
-            const projeto = projetos[projetoAtual];
-            if (!projeto) return;
-
-            document.getElementById('metric-projetos').textContent = Object.keys(projetos).length;
-            document.getElementById('metric-budget').textContent = formatarMoeda(projeto.orcamento || 0);
-
-            let total = 0, concluidas = 0;
-            ['iniciacao', 'planejamento', 'execucao', 'encerramento'].forEach(fase => {
-                if (projeto[fase]) {
-                    projeto[fase].forEach(t => {
-                        total++;
-                        if (t.status === 'Concluído') concluidas++;
-                    });
-                }
-            });
-            if (projeto.kanban) {
-                const kTotal = Object.values(projeto.kanban).reduce((sum, arr) => sum + arr.length, 0);
-                total += kTotal;
-                concluidas += (projeto.kanban.done?.length || 0);
-            }
-            
-            const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0;
-            document.getElementById('metric-tarefas').textContent = concluidas;
-            document.getElementById('metric-tarefas-pct').textContent = `${pct}% concluídas`;
-            document.getElementById('metric-evolucao').textContent = `${pct}%`;
-            document.getElementById('barra-evolucao').style.width = `${pct}%`;
-
-            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
-            document.getElementById('metric-riscos').textContent = criticos;
-            document.getElementById('riscos-criticos').textContent = criticos;
-        }
-
-        function atualizarMonitoramento() {
-            const projeto = projetos[projetoAtual];
-            if (!projeto) return;
-            
-            const fases = ['iniciacao', 'planejamento', 'execucao', 'encerramento'];
-            let totalGeral = 0, concluidasGeral = 0;
-            
-            fases.forEach(fase => {
-                const tarefas = projeto[fase] || [];
-                const concluidas = tarefas.filter(t => t.status === 'Concluído').length;
-                totalGeral += tarefas.length;
-                concluidasGeral += concluidas;
-            });
-            
-            const pctEvolucao = totalGeral > 0 ? Math.round((concluidasGeral / totalGeral) * 100) : 0;
-            document.getElementById('monitor-evolucao').textContent = `${pctEvolucao}%`;
-            document.getElementById('monitor-evolucao-info').textContent = `${concluidasGeral} de ${totalGeral} tarefas formais concluídas`;
-            document.getElementById('monitor-barra-evolucao').style.width = `${pctEvolucao}%`;
-            
-            const orcamento = projeto.orcamento || 0;
-            const totalGasto = (projeto.transacoes || []).reduce((sum, t) => sum + (t.valor || 0), 0);
-            const pctFin = orcamento > 0 ? Math.round((totalGasto / orcamento) * 100) : 0;
-            document.getElementById('monitor-orcamento').textContent = `${pctFin}%`;
-            document.getElementById('monitor-financeiro-info').textContent = `${formatarMoeda(totalGasto)} de ${formatarMoeda(orcamento)}`;
-            document.getElementById('monitor-barra-fin').style.width = `${Math.min(pctFin, 100)}%`;
-            
-            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
-            const altos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Alto').length : 0;
-            document.getElementById('monitor-riscos').textContent = projeto.riscos?.length || 0;
-            document.getElementById('monitor-riscos-info').textContent = `${criticos} críticos, ${altos} altos`;
-        }
-
+        // ==========================================
+        // FUNÇÕES DE FASES E TAREFAS
+        // ==========================================
         function renderizarFase(fase) {
             const tbody = document.getElementById(`tbody-${fase}`);
             if (!tbody) return;
@@ -1349,6 +1830,9 @@
             }
         }
 
+        // ==========================================
+        // FUNÇÕES DE KANBAN
+        // ==========================================
         function renderizarKanban() {
             const container = document.getElementById('kanban-container');
             container.innerHTML = '';
@@ -1525,6 +2009,9 @@
             atualizarMetricas();
         }
 
+        // ==========================================
+        // FUNÇÕES DE KANBAN FULLSCREEN
+        // ==========================================
         function openKanbanFullscreen() {
             const projeto = projetos[projetoAtual];
             document.getElementById('kanban-fullscreen-project-name').textContent = `${projeto.nome} - ${projeto.cliente}`;
@@ -1646,6 +2133,9 @@
             openEditarKanban(coluna, taskId);
         }
 
+        // ==========================================
+        // FUNÇÕES DE DOCUMENTOS
+        // ==========================================
         function uploadDocumento() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -1682,6 +2172,9 @@
 
         function removeDocumento(idx) { if (confirm('Remover documento?')) { projetos[projetoAtual].documentos.splice(idx, 1); salvarDados(); renderizarDocumentos(); } }
 
+        // ==========================================
+        // FUNÇÕES DE RISCOS
+        // ==========================================
         function addRisco() {
             const risco = {
                 id: 'R' + String((projetos[projetoAtual].riscos?.length || 0) + 1).padStart(3, '0'),
@@ -1715,6 +2208,9 @@
             }
         }
 
+        // ==========================================
+        // FUNÇÕES FINANCEIRAS
+        // ==========================================
         function addReserva() {
             const projeto = projetos[projetoAtual];
             const reservaAtual = projeto.reserva || 0;
@@ -1799,39 +2295,9 @@
 
         function removeTransacao(idx) { if (confirm('Remover transação?')) { projetos[projetoAtual].transacoes.splice(idx, 1); salvarDados(); renderizarFinanceiro(); atualizarMonitoramento(); } }
 
-        function addUsuario() {
-            if (perfilAtual !== 'gerente' && perfilAtual !== 'supervisor' && perfilAtual !== 'admin') {
-                alert('Apenas Gerentes, Supervisores e Administradores podem adicionar usuários!');
-                return;
-            }
-            
-            const nome = prompt('Nome completo:'); if (!nome) return;
-            const email = prompt('Email:');
-            const grupo = prompt('Grupo (admin/supervisao/gerente/assistente):', 'gerente');
-            if (email && grupo) {
-                if (!projetos[projetoAtual].usuarios) projetos[projetoAtual].usuarios = [];
-                projetos[projetoAtual].usuarios.push({ nome, email, grupo });
-                salvarDados();
-                renderizarUsuarios();
-            }
-        }
-
-        function renderizarUsuarios() {
-            const tbody = document.getElementById('tbody-usuarios');
-            tbody.innerHTML = '';
-            const projeto = projetos[projetoAtual];
-            const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
-            if (projeto.usuarios) {
-                projeto.usuarios.forEach((u, idx) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="px-4 py-3 flex items-center"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.nome)}&background=random&size=32" class="rounded-full mr-3"><span class="font-medium">${u.nome}</span></td><td class="px-4 py-3">${u.email}</td><td class="px-4 py-3"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold uppercase">${u.grupo}</span></td><td class="px-4 py-3 text-xs">${permissoesTexto[u.grupo] || 'Sem permissões'}</td><td class="px-4 py-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="removeUsuario(${idx})"><i class="fas fa-trash"></i></button></td>`;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
-
-        function removeUsuario(idx) { if (confirm('Remover usuário?')) { projetos[projetoAtual].usuarios.splice(idx, 1); salvarDados(); renderizarUsuarios(); } }
-
+        // ==========================================
+        // FUNÇÕES DE PROJETO
+        // ==========================================
         function novoProjeto() {
             const nome = prompt('Nome do Projeto:'); if (!nome) return;
             const cliente = prompt('Nome do Cliente:');
@@ -1851,42 +2317,185 @@
             }
         }
 
-        function exportarProjeto() {
-            const tipo = confirm('OK para Excel, Cancelar para PDF') ? 'excel' : 'pdf';
-            const projeto = projetos[projetoAtual];
-            if (tipo === 'excel') {
-                const wb = XLSX.utils.book_new();
-                const info = XLSX.utils.aoa_to_sheet([['RELATÓRIO PMBOK'], [], ['Projeto:', projeto.nome], ['Cliente:', projeto.cliente], ['Gerente:', projeto.gerente], ['Budget:', formatarMoeda(projeto.orcamento)], ['Reserva:', formatarMoeda(projeto.reserva || 0)], ['Data:', new Date().toLocaleDateString('pt-BR')]]);
-                XLSX.utils.book_append_sheet(wb, info, 'Informações');
-                const fases = [{ id: 'iniciacao', nome: '1. Iniciação' }, { id: 'planejamento', nome: '2. Planejamento' }, { id: 'execucao', nome: '3. Execução' }, { id: 'encerramento', nome: '4. Encerramento' }];
-                fases.forEach(fase => {
-                    const dados = projeto[fase] || [];
-                    const rows = [['ID', 'Atividade', 'Início', 'Duração', 'Término', 'Responsável', 'Status']];
-                    dados.forEach(t => rows.push([t.id, t.atividade, t.inicio, t.duracao, t.termino, t.responsavel, t.status]));
-                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), fase.nome);
-                });
-                const kanbanRows = [['Coluna', 'Título', 'Responsável', 'Data', 'Notas']];
-                Object.entries(projeto.kanban).forEach(([col, tarefas]) => { tarefas.forEach(t => kanbanRows.push([col, t.titulo, t.responsavel, t.data, t.notas])); });
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kanbanRows), 'Kanban (Equipe)');
-                const finRows = [['Tipo', 'Data', 'Descrição', 'Categoria', 'Status', 'Valor']];
-                projeto.transacoes?.forEach(t => finRows.push(['Despesa', t.data, t.descricao, t.categoria, t.status, t.valor]));
-                if (projeto.reserva > 0) finRows.push(['Reserva', '-', 'Reserva de Contingência', 'Contingência', 'Reservado', projeto.reserva]);
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(finRows), 'Financeiro');
-                XLSX.writeFile(wb, `PMBOK_${projeto.nome.replace(/\s+/g, '_')}.xlsx`);
-            } else {
-                const element = document.createElement('div');
-                element.style.padding = '20px';
-                element.innerHTML = `<h1 style="text-align: center; color: #1e40af;">Relatório PMBOK - ${projeto.nome}</h1><p style="text-align: center; color: #6b7280;">Cliente: ${projeto.cliente} | Gerente: ${projeto.gerente}</p><p style="text-align: center;"><strong>Budget:</strong> ${formatarMoeda(projeto.orcamento)} | <strong>Reserva:</strong> ${formatarMoeda(projeto.reserva || 0)}</p><hr style="margin: 20px 0;"><h2 style="color: #10b981;">1. Iniciação</h2><table style="width: 100%; border-collapse: collapse; font-size: 12px;"><tr style="background: #10b981; color: white;"><th style="padding: 8px; border: 1px solid #ddd;">ID</th><th style="padding: 8px; border: 1px solid #ddd;">Atividade</th><th style="padding: 8px; border: 1px solid #ddd;">Início</th><th style="padding: 8px; border: 1px solid #ddd;">Duração</th><th style="padding: 8px; border: 1px solid #ddd;">Término</th><th style="padding: 8px; border: 1px solid #ddd;">Status</th></tr>${(projeto.iniciacao || []).map(t => `<tr><td style="padding: 6px; border: 1px solid #ddd;">${t.id}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.atividade}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.inicio}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.duracao}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.termino}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.status}</td></tr>`).join('')}</table>`;
-                html2pdf().set({ margin: 10, filename: `PMBOK_${projeto.nome}.pdf` }).from(element).save();
+        function renderizarMeusProjetos() {
+            const tbody = document.getElementById('tbody-meus-projetos');
+            tbody.innerHTML = '';
+            
+            if (!usuarioLogado) return;
+            
+            const projetosDoGerente = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+            
+            projetosDoGerente.forEach(([id, projeto]) => {
+                const statusClass = projeto.status === 'no-prazo' ? 'bg-green-100 text-green-800' :
+                                   projeto.status === 'atencao' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                const statusText = projeto.status === 'no-prazo' ? 'No Prazo' :
+                                  projeto.status === 'atencao' ? 'Atenção' : 'Crítico';
+                
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${projeto.nome}</td>
+                    <td class="px-4 py-3">${projeto.cliente}</td>
+                    <td class="px-4 py-3 font-semibold">${formatarMoeda(projeto.orcamento)}</td>
+                    <td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${statusText}</span></td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="openEditarProjeto('${id}')" class="text-blue-600 hover:text-blue-800 mx-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="removerProjeto('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Remover">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openEditarProjeto(projetoId) {
+            const projeto = projetos[projetoId];
+            if (!projeto) return;
+            
+            document.getElementById('edit-projeto-id').value = projetoId;
+            document.getElementById('edit-projeto-nome').value = projeto.nome;
+            document.getElementById('edit-projeto-cliente').value = projeto.cliente;
+            document.getElementById('edit-projeto-budget').value = projeto.orcamento;
+            document.getElementById('edit-projeto-status').value = projeto.status;
+            
+            document.getElementById('editar-projeto-modal').classList.add('active');
+        }
+
+        function closeEditarProjetoModal() {
+            document.getElementById('editar-projeto-modal').classList.remove('active');
+        }
+
+        function salvarEdicaoProjeto() {
+            const projetoId = document.getElementById('edit-projeto-id').value;
+            const projeto = projetos[projetoId];
+            if (!projeto) return;
+            
+            projeto.nome = document.getElementById('edit-projeto-nome').value;
+            projeto.cliente = document.getElementById('edit-projeto-cliente').value;
+            projeto.orcamento = parseValorBrasileiro(document.getElementById('edit-projeto-budget').value);
+            projeto.status = document.getElementById('edit-projeto-status').value;
+            
+            salvarDados();
+            closeEditarProjetoModal();
+            renderizarMeusProjetos();
+            popularFiltro();
+            trocarProjeto(projetoId);
+            
+            alert('Projeto atualizado com sucesso!');
+        }
+
+        function removerProjeto(projetoId) {
+            if (confirm('Tem certeza que deseja remover este projeto?')) {
+                delete projetos[projetoId];
+                salvarDados();
+                renderizarMeusProjetos();
+                popularFiltro();
+                
+                if (projetoId === projetoAtual) {
+                    const primeiroProjeto = Object.keys(projetos)[0];
+                    if (primeiroProjeto) {
+                        trocarProjeto(primeiroProjeto);
+                    }
+                }
+                
+                alert('Projeto removido com sucesso!');
             }
         }
 
+        function atualizarMetricas() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+
+            document.getElementById('metric-projetos').textContent = Object.keys(projetos).length;
+            document.getElementById('metric-budget').textContent = formatarMoeda(projeto.orcamento || 0);
+
+            let total = 0, concluidas = 0;
+            ['iniciacao', 'planejamento', 'execucao', 'encerramento'].forEach(fase => {
+                if (projeto[fase]) {
+                    projeto[fase].forEach(t => {
+                        total++;
+                        if (t.status === 'Concluído') concluidas++;
+                    });
+                }
+            });
+            if (projeto.kanban) {
+                const kTotal = Object.values(projeto.kanban).reduce((sum, arr) => sum + arr.length, 0);
+                total += kTotal;
+                concluidas += (projeto.kanban.done?.length || 0);
+            }
+            
+            const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+            document.getElementById('metric-tarefas').textContent = concluidas;
+            document.getElementById('metric-tarefas-pct').textContent = `${pct}% concluídas`;
+            document.getElementById('metric-evolucao').textContent = `${pct}%`;
+            document.getElementById('barra-evolucao').style.width = `${pct}%`;
+
+            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
+            document.getElementById('metric-riscos').textContent = criticos;
+            document.getElementById('riscos-criticos').textContent = criticos;
+        }
+
+        function atualizarMonitoramento() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
+            const fases = ['iniciacao', 'planejamento', 'execucao', 'encerramento'];
+            let totalGeral = 0, concluidasGeral = 0;
+            
+            fases.forEach(fase => {
+                const tarefas = projeto[fase] || [];
+                const concluidas = tarefas.filter(t => t.status === 'Concluído').length;
+                totalGeral += tarefas.length;
+                concluidasGeral += concluidas;
+            });
+            
+            const pctEvolucao = totalGeral > 0 ? Math.round((concluidasGeral / totalGeral) * 100) : 0;
+            document.getElementById('monitor-evolucao').textContent = `${pctEvolucao}%`;
+            document.getElementById('monitor-evolucao-info').textContent = `${concluidasGeral} de ${totalGeral} tarefas formais concluídas`;
+            document.getElementById('monitor-barra-evolucao').style.width = `${pctEvolucao}%`;
+            
+            const orcamento = projeto.orcamento || 0;
+            const totalGasto = (projeto.transacoes || []).reduce((sum, t) => sum + (t.valor || 0), 0);
+            const pctFin = orcamento > 0 ? Math.round((totalGasto / orcamento) * 100) : 0;
+            document.getElementById('monitor-orcamento').textContent = `${pctFin}%`;
+            document.getElementById('monitor-financeiro-info').textContent = `${formatarMoeda(totalGasto)} de ${formatarMoeda(orcamento)}`;
+            document.getElementById('monitor-barra-fin').style.width = `${Math.min(pctFin, 100)}%`;
+            
+            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
+            const altos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Alto').length : 0;
+            document.getElementById('monitor-riscos').textContent = projeto.riscos?.length || 0;
+            document.getElementById('monitor-riscos-info').textContent = `${criticos} críticos, ${altos} altos`;
+        }
+
+        // Evento de tecla ESC
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') { closeEditarKanbanModal(); closeKanbanFullscreen(); closeEditarProjetoModal(); }
+            if (e.key === 'Escape') { 
+                closeEditarKanbanModal(); 
+                closeKanbanFullscreen(); 
+                closeEditarProjetoModal();
+                if (document.getElementById('cadastro-modal').classList.contains('active')) {
+                    fecharModalCadastro();
+                }
+                if (document.getElementById('redefinir-modal').classList.contains('active')) {
+                    fecharModalRedefinir();
+                }
+                if (document.getElementById('redefinir-admin-modal').classList.contains('active')) {
+                    fecharModalRedefinirAdmin();
+                }
+            }
         });
 
+        // Inicializar
         window.onload = function() { 
+            carregarUsuarios();
             popularFiltro(); 
+            // Se não houver usuário logado, mostrar modal de login
+            if (!usuarioLogado) {
+                document.getElementById('login-modal').classList.add('active');
+            }
         };
     </script>
 </body>
