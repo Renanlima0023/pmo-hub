@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMO Project Hub - Supabase</title>
+    <title>PMO Project Hub - Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .sidebar-link { transition: all 0.2s; }
         .sidebar-link:hover { background-color: rgba(255,255,255,0.1); padding-left: 1.5rem; }
+        .editable-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 4px; border-radius: 4px; }
+        .editable-input:hover, .editable-input:focus { border-color: #cbd5e1; background: white; outline: none; }
+        .kanban-column { min-height: 300px; }
+        .kanban-card { cursor: grab; transition: all 0.2s; }
+        .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .kanban-card:active { cursor: grabbing; }
+        .kanban-card.dragging { opacity: 0.5; }
+        .kanban-column.drag-over { background-color: rgba(59, 130, 246, 0.1); border: 2px dashed #3b82f6; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; }
         .modal.active { display: flex; align-items: center; justify-content: center; }
         .modal-content { background: white; border-radius: 12px; max-width: 90%; max-height: 90%; overflow: auto; padding: 2rem; }
+        .mini-chart-bar { transition: width 0.5s ease; }
+        .kanban-fullscreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f1f5f9; z-index: 9998; overflow: auto; }
+        .kanban-fullscreen.active { display: block; }
+        .kanban-fullscreen-header { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .kanban-fullscreen-body { padding: 2rem; height: calc(100vh - 100px); overflow: auto; }
+        .kanban-fullscreen-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; height: 100%; }
+        .kanban-fullscreen-column { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .kanban-fullscreen-card { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; cursor: grab; }
+        .kanban-fullscreen-card:hover { border-color: #f97316; }
+        .finance-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 120px; }
         
         .dashboard-cards {
             display: grid !important;
@@ -51,15 +70,23 @@
     <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
         <div class="p-6 border-b border-slate-700">
             <h1 class="text-2xl font-bold text-blue-400">PMO Project Hub</h1>
-            <p class="text-xs text-slate-400 mt-1">v7.0 - Supabase</p>
+            <p class="text-xs text-slate-400 mt-1">v10.0 - Completo</p>
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
             <a href="#dashboard" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</a>
+            <a href="#meus-projetos" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-folder-open w-6"></i> Meus Projetos</a>
             <div class="px-6 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">Fases PMBOK</div>
             <a href="#iniciacao" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-play w-6"></i> Iniciação</a>
             <a href="#planejamento" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-clipboard-list w-6"></i> Planejamento</a>
+            <a href="#execucao-fase" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-cogs w-6"></i> Execução</a>
             <a href="#execucao" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-columns w-6"></i> Kanban</a>
+            <a href="#monitoramento" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-chart-line w-6"></i> Monitoramento</a>
+            <a href="#encerramento" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-flag-checkered w-6"></i> Encerramento</a>
+            <div class="px-6 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">Gestão</div>
+            <a href="#documentos" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-folder-open w-6"></i> Documentos</a>
+            <a href="#riscos" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-exclamation-triangle w-6"></i> Riscos</a>
             <a href="#financeiro" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-coins w-6"></i> Financeiro</a>
+            <a href="#usuarios" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-users w-6"></i> Usuários</a>
         </nav>
         <div class="p-4 border-t border-slate-700">
             <div class="flex items-center mb-2">
@@ -70,7 +97,7 @@
                 </div>
             </div>
             <button onclick="toggleLogin()" class="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs px-3 py-2 rounded transition">
-                <i class="fas fa-sign-in-alt mr-2"></i>
+                <i class="fas fa-sign-out-alt mr-2"></i>
                 <span id="login-btn-text">Entrar</span>
             </button>
         </div>
@@ -86,17 +113,15 @@
             </div>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
                     <input type="email" id="login-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
                     <input type="password" id="login-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite sua senha">
-                    <p class="text-xs text-gray-500 mt-1">Teste: carlos@empresa.com / carlos123</p>
                 </div>
                 <div id="login-error" class="text-red-600 text-sm hidden">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    Email ou senha incorretos!
+                    <i class="fas fa-exclamation-circle mr-1"></i> E-mail ou senha incorretos!
                 </div>
                 <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-sign-in-alt mr-2"></i>Entrar
@@ -106,7 +131,7 @@
     </div>
 
     <!-- VISÃO PRINCIPAL -->
-    <main class="flex-1 overflow-y-auto p-8">
+    <main class="flex-1 overflow-y-auto p-8" id="normal-view">
         
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -121,11 +146,17 @@
                     <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md">
                         <i class="fas fa-building mr-1"></i> <span id="nome-cliente">-</span>
                     </div>
+                    <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> <span id="riscos-criticos">0</span> Riscos Críticos
+                    </div>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-800" id="titulo-projeto">PMO Project Hub</h2>
                 <p class="text-gray-500 mt-1" id="subtitulo-projeto">Gerencie todas as fases do seu projeto.</p>
             </div>
             <div class="flex gap-2 flex-wrap">
+                <button onclick="exportarProjeto()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg shadow-md font-semibold transition flex items-center">
+                    <i class="fas fa-file-export mr-2"></i> Exportar
+                </button>
                 <button onclick="novoProjeto()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md font-semibold transition flex items-center">
                     <i class="fas fa-plus mr-2"></i> Novo Projeto
                 </button>
@@ -189,6 +220,30 @@
             </div>
         </section>
 
+        <!-- MEUS PROJETOS -->
+        <section id="meus-projetos" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-folder-open mr-2 text-blue-600"></i>Meus Projetos</h2>
+                    <p class="text-sm text-gray-500">Visualize e gerencie todos os seus projetos.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-blue-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Projeto</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Cliente</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Budget</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center font-semibold text-blue-900 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-meus-projetos"></tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- Fase de Iniciação -->
         <section id="iniciacao" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -249,18 +304,218 @@
             </div>
         </section>
 
-        <!-- Kanban -->
-        <section id="execucao" class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <!-- Fase de Execução -->
+        <section id="execucao-fase" class="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-teal-500">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-cogs mr-2 text-teal-600"></i>Fase de Execução</h2>
+                    <p class="text-sm text-gray-500">Entregáveis formais da execução do projeto.</p>
+                </div>
+                <button onclick="addTarefa('execucao')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Nova Tarefa
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-teal-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">ID</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Atividade</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Início</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Duração</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Término</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Responsável</th>
+                            <th class="px-4 py-3 text-left font-semibold text-teal-900 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center font-semibold text-teal-900 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-execucao"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- KANBAN DA EQUIPE -->
+        <section id="execucao" class="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-orange-500">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
                     <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-columns mr-2 text-orange-600"></i>Kanban da Equipe</h2>
                     <p class="text-sm text-gray-500">Organização interna das demandas diárias.</p>
                 </div>
-                <button onclick="addTarefaKanban()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                <div class="flex gap-2">
+                    <button onclick="openKanbanFullscreen()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                        <i class="fas fa-expand mr-2"></i> Tela Cheia
+                    </button>
+                    <button onclick="addTarefaKanban()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Nova Tarefa
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-orange-50 rounded-lg">
+                <div class="text-center">
+                    <p class="text-xs text-gray-600 font-medium mb-1">Total de Demandas</p>
+                    <p class="text-3xl font-bold text-gray-800" id="kanban-total">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-600 font-medium mb-1">Em Andamento</p>
+                    <p class="text-3xl font-bold text-blue-600" id="kanban-doing-count">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-600 font-medium mb-1">Taxa de Conclusão</p>
+                    <p class="text-3xl font-bold text-green-600" id="kanban-taxa">0%</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-600 font-medium mb-1">Eficiência da Equipe</p>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mt-3">
+                        <div id="kanban-eficiencia-barra" class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-1" id="kanban-eficiencia-texto">0%</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mb-4">
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-semibold text-gray-700">A Fazer</span>
+                        <span id="bar-todo-count" class="text-gray-500">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="bar-todo" class="bg-gray-400 h-2 rounded-full mini-chart-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-semibold text-blue-700">Em Andamento</span>
+                        <span id="bar-doing-count" class="text-gray-500">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="bar-doing" class="bg-blue-500 h-2 rounded-full mini-chart-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-semibold text-yellow-700">Revisão</span>
+                        <span id="bar-review-count" class="text-gray-500">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="bar-review" class="bg-yellow-500 h-2 rounded-full mini-chart-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-semibold text-green-700">Concluído</span>
+                        <span id="bar-done-count" class="text-gray-500">0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="bar-done" class="bg-green-500 h-2 rounded-full mini-chart-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="kanban-container"></div>
+        </section>
+
+        <!-- Monitoramento -->
+        <section id="monitoramento" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="border-b pb-2 mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Monitoramento e Controle</h2>
+                <p class="text-sm text-gray-500">Indicadores atualizados automaticamente.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-lg border border-indigo-200">
+                    <h3 class="font-bold text-indigo-900 mb-2">Evolução do Projeto</h3>
+                    <div class="text-4xl font-bold text-indigo-900 mb-2" id="monitor-evolucao">0%</div>
+                    <p class="text-sm text-indigo-700" id="monitor-evolucao-info">Calculado pelas fases formais</p>
+                    <div class="w-full bg-indigo-200 rounded-full h-2 mt-3">
+                        <div id="monitor-barra-evolucao" class="bg-indigo-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+                    <h3 class="font-bold text-green-900 mb-2">Budget Utilizado</h3>
+                    <div class="text-4xl font-bold text-green-900 mb-2" id="monitor-orcamento">0%</div>
+                    <p class="text-sm text-green-700" id="monitor-financeiro-info">R$ 0 de R$ 0</p>
+                    <div class="w-full bg-green-200 rounded-full h-2 mt-3">
+                        <div id="monitor-barra-fin" class="bg-green-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg border border-red-200">
+                    <h3 class="font-bold text-red-900 mb-2">Riscos Ativos</h3>
+                    <div class="text-4xl font-bold text-red-900 mb-2" id="monitor-riscos">0</div>
+                    <p class="text-sm text-red-700" id="monitor-riscos-info">0 críticos, 0 altos</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fase de Encerramento -->
+        <section id="encerramento" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Fase de Encerramento</h2>
+                    <p class="text-sm text-gray-500">Finalização formal e lições aprendidas.</p>
+                </div>
+                <button onclick="addTarefa('encerramento')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
                     <i class="fas fa-plus mr-2"></i> Nova Tarefa
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="kanban-container"></div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-blue-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">ID</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Atividade</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Início</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Duração</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Término</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Responsável</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Status</th>
+                            <th class="px-4 py-3 text-center font-semibold text-blue-900 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-encerramento"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Gestão Documental -->
+        <section id="documentos" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Gestão Documental</h2>
+                    <p class="text-sm text-gray-500">Faça upload do arquivo primeiro, depois informe o nome.</p>
+                </div>
+                <button onclick="uploadDocumento()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                    <i class="fas fa-upload mr-2"></i> Upload Arquivo
+                </button>
+            </div>
+            <ul id="lista-documentos" class="space-y-3"></ul>
+        </section>
+
+        <!-- Gestão de Riscos -->
+        <section id="riscos" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Gestão de Riscos</h2>
+                    <p class="text-sm text-gray-500">Identificação, análise e plano de resposta.</p>
+                </div>
+                <button onclick="addRisco()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Novo Risco
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">ID</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Descrição</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Prob.</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Impacto</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Nível</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Resposta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-riscos"></tbody>
+                </table>
+            </div>
         </section>
 
         <!-- Gestão Financeira -->
@@ -270,27 +525,42 @@
                     <h2 class="text-xl font-bold text-gray-800">Gestão Financeira</h2>
                     <p class="text-sm text-gray-500">Budget - Gastos - Reserva = Saldo Disponível</p>
                 </div>
-                <button onclick="addTransacao()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Adicionar Despesa
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="addReserva()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                        <i class="fas fa-piggy-bank mr-2"></i> Reserva
+                    </button>
+                    <button onclick="addTransacao()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Adicionar Despesa
+                    </button>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200 text-center">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200 finance-card">
                     <p class="text-xs text-blue-600 font-medium mb-2">Budget Total</p>
                     <h3 class="text-xl font-bold text-blue-900" id="orcamento-total">R$ 0,00</h3>
                 </div>
-                <div class="bg-gradient-to-br from-red-50 to-red-100 p-5 rounded-lg border border-red-200 text-center">
-                    <p class="text-xs text-red-600 font-medium mb-2">Gastos</p>
+                <div class="bg-gradient-to-br from-red-50 to-red-100 p-5 rounded-lg border border-red-200 finance-card">
+                    <p class="text-xs text-red-600 font-medium mb-2">Gastos (Pago + Pendente)</p>
                     <h3 class="text-xl font-bold text-red-900" id="gasto-total">R$ 0,00</h3>
+                    <p class="text-xs text-red-600 mt-2" id="pct-gasto">0% do budget</p>
                 </div>
-                <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-5 rounded-lg border border-amber-200 text-center">
+                <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-5 rounded-lg border border-amber-200 finance-card">
                     <p class="text-xs text-amber-600 font-medium mb-2">Reserva</p>
                     <h3 class="text-xl font-bold text-amber-900" id="reserva-total">R$ 0,00</h3>
+                    <button onclick="editarReserva()" class="text-xs text-amber-700 hover:text-amber-900 mt-2 underline">
+                        <i class="fas fa-edit mr-1"></i>Editar
+                    </button>
                 </div>
-                <div class="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg border border-green-200 text-center">
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-5 rounded-lg border border-orange-200 finance-card">
+                    <p class="text-xs text-orange-600 font-medium mb-2">Total Comprometido</p>
+                    <h3 class="text-xl font-bold text-orange-900" id="total-comprometido">R$ 0,00</h3>
+                    <p class="text-xs text-orange-600 mt-2">Gastos + Reserva</p>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg border border-green-200 finance-card">
                     <p class="text-xs text-green-600 font-medium mb-2">Saldo Disponível</p>
                     <h3 class="text-xl font-bold text-green-900" id="saldo-disponivel">R$ 0,00</h3>
+                    <p class="text-xs text-green-600 mt-2" id="pct-saldo">100% livre</p>
                 </div>
             </div>
 
@@ -301,6 +571,7 @@
                             <th class="px-4 py-3 text-left font-semibold text-gray-700">Data</th>
                             <th class="px-4 py-3 text-left font-semibold text-gray-700">Descrição</th>
                             <th class="px-4 py-3 text-left font-semibold text-gray-700">Categoria</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700">Tipo</th>
                             <th class="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                             <th class="px-4 py-3 text-right font-semibold text-gray-700">Valor</th>
                             <th class="px-4 py-3 text-center font-semibold text-gray-700">Ações</th>
@@ -311,21 +582,231 @@
             </div>
         </section>
 
+        <!-- Gerenciamento de Usuários -->
+        <section id="usuarios" class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Gerenciamento de Usuários</h2>
+                    <p class="text-sm text-gray-500">Grupos: Admin, Supervisão, Gerente, Assistente</p>
+                </div>
+                <button onclick="addUsuario()" id="btn-add-usuario" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition flex items-center">
+                    <i class="fas fa-user-plus mr-2"></i> Novo Usuário
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-purple-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold text-purple-900 uppercase">Usuário</th>
+                            <th class="px-4 py-3 text-left font-semibold text-purple-900 uppercase">Email</th>
+                            <th class="px-4 py-3 text-left font-semibold text-purple-900 uppercase">Grupo</th>
+                            <th class="px-4 py-3 text-left font-semibold text-purple-900 uppercase">Permissões</th>
+                            <th class="px-4 py-3 text-center font-semibold text-purple-900 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-usuarios"></tbody>
+                </table>
+            </div>
+        </section>
+
     </main>
 
+    <!-- MODAL FULLSCREEN KANBAN -->
+    <div id="kanban-fullscreen-modal" class="kanban-fullscreen">
+        <div class="kanban-fullscreen-header">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-columns text-2xl"></i>
+                <div>
+                    <h2 class="text-2xl font-bold">Kanban da Equipe - Tela Cheia</h2>
+                    <p class="text-sm opacity-90" id="kanban-fullscreen-project-name">Projeto</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="addTarefaKanbanFullscreen()" class="bg-white text-orange-600 hover:bg-gray-100 px-6 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-plus mr-2"></i>Nova Tarefa
+                </button>
+                <button onclick="closeKanbanFullscreen()" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-6 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-times mr-2"></i>Fechar
+                </button>
+            </div>
+        </div>
+        <div class="kanban-fullscreen-body">
+            <div class="kanban-fullscreen-grid" id="kanban-fullscreen-container"></div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Tarefa Kanban -->
+    <div id="editar-kanban-modal" class="modal">
+        <div class="modal-content bg-white p-6 max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Editar Tarefa</h3>
+            <input type="hidden" id="edit-kanban-id">
+            <input type="hidden" id="edit-kanban-coluna">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                    <input type="text" id="edit-kanban-titulo" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Responsável</label>
+                    <input type="text" id="edit-kanban-responsavel" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Data Prevista</label>
+                    <input type="date" id="edit-kanban-data" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Anotações</label>
+                    <textarea id="edit-kanban-notas" class="w-full border border-gray-300 rounded px-3 py-2" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button onclick="salvarEdicaoKanban()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">Salvar</button>
+                <button onclick="closeEditarKanbanModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-semibold">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Projeto -->
+    <div id="editar-projeto-modal" class="modal">
+        <div class="modal-content bg-white p-6 max-w-lg w-full">
+            <h3 class="text-xl font-bold mb-4">Editar Projeto</h3>
+            <input type="hidden" id="edit-projeto-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Projeto</label>
+                    <input type="text" id="edit-projeto-nome" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                    <input type="text" id="edit-projeto-cliente" class="w-full border border-gray-300 rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Budget do Projeto</label>
+                    <input type="text" id="edit-projeto-budget" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Ex: 450000 ou 450.000,00">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select id="edit-projeto-status" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="no-prazo">No Prazo</option>
+                        <option value="atencao">Atenção</option>
+                        <option value="critico">Crítico</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button onclick="salvarEdicaoProjeto()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">Salvar</button>
+                <button onclick="closeEditarProjetoModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-semibold">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ==========================================
+
+   // ==========================================
         // ⚠️ CONFIGURAÇÃO DO SUPABASE
         // SUBSTITUA PELAS SUAS CREDENCIAIS!
         // ==========================================
         const SUPABASE_URL = 'sb_publishable_6FC1dhL0rg6A9G7Ji71Iyg_KbKUml01';
         const SUPABASE_KEY = 'sb_secret_sq_vRtQ_MpaNtJMrU2L6Qg_zaquYGOi';
-        
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+         
+        // ==========================================
+        // SISTEMA DE USUÁRIOS (LOCAL)
+        // ==========================================
+        const usuariosSistema = {
+            'carlos@empresa.com': { nome: 'Carlos Silva', grupo: 'gerente', senha: 'carlos123', email: 'carlos@empresa.com' },
+            'maria@empresa.com': { nome: 'Maria Santos', grupo: 'assistente', senha: 'maria123', email: 'maria@empresa.com' },
+            'joao@empresa.com': { nome: 'João Costa', grupo: 'supervisor', senha: 'joao123', email: 'joao@empresa.com' },
+            'admin@empresa.com': { nome: 'Admin', grupo: 'admin', senha: 'admin123', email: 'admin@empresa.com' }
+        };
 
         let usuarioLogado = null;
+        let perfilAtual = null;
+        let projetoAtual = 'proj1';
+
+        // ==========================================
+        // DADOS INICIAIS
+        // ==========================================
+        const projetosPadrao = {
+            'proj1': { 
+                nome: 'Sistema de Gestão Integrada', 
+                cliente: 'Empresa Alpha LTDA', 
+                gerente: 'Carlos Silva',
+                orcamento: 450000,
+                reserva: 45000,
+                status: 'no-prazo',
+                iniciacao: [
+                    { id: '1.1', atividade: 'Desenvolver Termo de Abertura', inicio: '2026-06-01', duracao: 5, termino: '2026-06-06', responsavel: 'Carlos Silva', status: 'Concluído' },
+                    { id: '1.2', atividade: 'Identificar Stakeholders', inicio: '2026-06-07', duracao: 3, termino: '2026-06-10', responsavel: 'Ana Souza', status: 'Concluído' }
+                ],
+                planejamento: [
+                    { id: '2.1', atividade: 'Criar EAP', inicio: '2026-06-11', duracao: 7, termino: '2026-06-18', responsavel: 'Carlos Silva', status: 'Concluído' }
+                ],
+                execucao: [
+                    { id: '3.1', atividade: 'Desenvolvimento Backend', inicio: '2026-06-21', duracao: 15, termino: '2026-07-06', responsavel: 'João Dev', status: 'Em Andamento' }
+                ],
+                kanban: {
+                    todo: [
+                        { id: 'k1', titulo: 'Configurar ambiente', responsavel: 'João Dev', data: '2026-06-20', notas: '', avatar: 'JD' },
+                        { id: 'k2', titulo: 'Criar wireframes', responsavel: 'Ana Designer', data: '2026-06-21', notas: '', avatar: 'AD' }
+                    ],
+                    doing: [
+                        { id: 'k3', titulo: 'Desenvolver módulo auth', responsavel: 'João Dev', data: '2026-06-25', notas: 'Prioridade alta', avatar: 'JD' }
+                    ],
+                    review: [
+                        { id: 'k4', titulo: 'Testes unitários', responsavel: 'Pedro QA', data: '2026-06-22', notas: '', avatar: 'PQ' }
+                    ],
+                    done: [
+                        { id: 'k5', titulo: 'Definir arquitetura', responsavel: 'João Dev', data: '2026-06-15', notas: '', avatar: 'JD' }
+                    ]
+                },
+                encerramento: [],
+                documentos: [
+                    { nome: 'Termo de Abertura v2.0', tipo: 'PDF', tamanho: '2.4 MB', data: '10/06/2026', usuario: 'Carlos Silva' }
+                ],
+                riscos: [
+                    { id: 'R001', descricao: 'Atraso na entrega de APIs', prob: 'Alta', impacto: 'Alto', nivel: 'Crítico', resposta: 'Mitigar: SLA' }
+                ],
+                transacoes: [
+                    { data: '12/06/2026', descricao: 'Licença AWS', categoria: 'Infraestrutura', tipo: 'Despesa', status: 'Pago', valor: 12500 },
+                    { data: '10/06/2026', descricao: 'Consultoria UX', categoria: 'Serviços', tipo: 'Despesa', status: 'Pendente', valor: 8000 }
+                ],
+                usuarios: [
+                    { nome: 'Carlos Silva', email: 'carlos@empresa.com', grupo: 'gerente' }
+                ]
+            },
+            'proj2': { 
+                nome: 'App Mobile Delivery', 
+                cliente: 'Restaurante Sabor & Cia', 
+                gerente: 'Carlos Silva',
+                orcamento: 280000,
+                reserva: 28000,
+                status: 'atencao',
+                iniciacao: [], planejamento: [], execucao: [], encerramento: [],
+                kanban: { todo: [], doing: [], review: [], done: [] },
+                documentos: [], riscos: [], transacoes: [], usuarios: []
+            }
+        };
+
         let projetos = {};
-        let projetoAtual = null;
+        try {
+            const salvos = localStorage.getItem('pmo_projetos');
+            if (salvos) {
+                projetos = JSON.parse(salvos);
+            } else {
+                projetos = JSON.parse(JSON.stringify(projetosPadrao));
+            }
+        } catch(e) {
+            projetos = JSON.parse(JSON.stringify(projetosPadrao));
+        }
+
+        function salvarDados() {
+            try {
+                localStorage.setItem('pmo_projetos', JSON.stringify(projetos));
+            } catch(e) {
+                console.log('Erro ao salvar:', e);
+            }
+        }
 
         // ==========================================
         // LOGIN
@@ -334,7 +815,11 @@
             if (usuarioLogado) {
                 if (confirm('Deseja realmente sair?')) {
                     usuarioLogado = null;
+                    perfilAtual = null;
                     document.getElementById('login-modal').classList.add('active');
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-senha').value = '';
+                    document.getElementById('login-error').classList.add('hidden');
                     document.getElementById('login-btn-text').textContent = 'Entrar';
                     document.getElementById('user-name').textContent = 'Não logado';
                     document.getElementById('user-role').textContent = '-';
@@ -344,274 +829,287 @@
             }
         }
 
-        async function fazerLogin() {
-            const email = document.getElementById('login-email').value;
+        function fazerLogin() {
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
             const senha = document.getElementById('login-senha').value;
+            const usuario = usuariosSistema[email];
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('usuarios')
-                    .select('*')
-                    .eq('email', email)
-                    .eq('senha', senha)
-                    .eq('ativo', true)
-                    .single();
-
-                if (error || !data) {
-                    document.getElementById('login-error').classList.remove('hidden');
-                    return;
-                }
-
-                usuarioLogado = data;
+            if (usuario && usuario.senha === senha) {
+                usuarioLogado = usuario;
+                perfilAtual = usuario.grupo;
+                
                 document.getElementById('login-modal').classList.remove('active');
                 document.getElementById('login-error').classList.add('hidden');
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-senha').value = '';
                 document.getElementById('login-btn-text').textContent = 'Sair';
-                document.getElementById('user-name').textContent = data.nome;
-                document.getElementById('user-role').textContent = data.grupo;
+                document.getElementById('user-name').textContent = usuario.nome;
+                document.getElementById('user-role').textContent = usuario.grupo;
                 
-                await carregarProjetos();
-                alert(`Bem-vindo, ${data.nome}!`);
-            } catch (error) {
-                console.error('Erro no login:', error);
+                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random`;
+                document.getElementById('user-avatar').src = avatarUrl;
+                
+                setTimeout(() => {
+                    popularFiltro();
+                    renderizarTudo();
+                }, 100);
+                
+                alert(`Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
+            } else {
                 document.getElementById('login-error').classList.remove('hidden');
             }
         }
 
-        // ==========================================
-        // CARREGAR PROJETOS
-        // ==========================================
-        async function carregarProjetos() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('projetos')
-                    .select('*');
-
-                if (error) throw error;
-
-                projetos = {};
-                for (const p of data) {
-                    const { data: tarefas } = await supabaseClient.from('tarefas').select('*').eq('projeto_id', p.id);
-                    const { data: transacoes } = await supabaseClient.from('transacoes').select('*').eq('projeto_id', p.id);
-                    const { data: kanbanData } = await supabaseClient.from('kanban').select('*').eq('projeto_id', p.id);
-                    const { data: riscos } = await supabaseClient.from('riscos').select('*').eq('projeto_id', p.id);
-                    
-                    const kanban = { todo: [], doing: [], review: [], done: [] };
-                    if (kanbanData) {
-                        kanbanData.forEach(k => {
-                            if (kanban[k.coluna]) kanban[k.coluna].push(k);
-                        });
-                    }
-                    
-                    projetos[p.id] = { ...p, tarefas: tarefas || [], transacoes: transacoes || [], kanban, riscos: riscos || [] };
-                }
-
-                popularFiltro();
-                const primeiroId = Object.keys(projetos)[0];
-                if (primeiroId) trocarProjeto(primeiroId);
-            } catch (error) {
-                console.error('Erro ao carregar projetos:', error);
+        // Permitir login com Enter
+        document.addEventListener('DOMContentLoaded', function() {
+            const senhaInput = document.getElementById('login-senha');
+            if (senhaInput) {
+                senhaInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') fazerLogin();
+                });
             }
+            const emailInput = document.getElementById('login-email');
+            if (emailInput) {
+                emailInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') document.getElementById('login-senha').focus();
+                });
+            }
+        });
+
+        // ==========================================
+        // FUNÇÕES AUXILIARES
+        // ==========================================
+        function formatarMoeda(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // ==========================================
-        // NOVO PROJETO
-        // ==========================================
-        async function novoProjeto() {
-            const nome = prompt('Nome do Projeto:');
-            if (!nome) return;
-            const cliente = prompt('Nome do Cliente:');
-            const gerente = prompt('Gerente:', usuarioLogado?.nome || '');
-            const orcamento = parseFloat(prompt('Budget:', '0')) || 0;
-            const reserva = parseFloat(prompt('Reserva:', '0')) || 0;
-
-            if (!cliente) return;
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('projetos')
-                    .insert([{ nome, cliente, gerente, orcamento, reserva, status: 'no-prazo' }])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-
-                projetos[data.id] = { ...data, tarefas: [], transacoes: [], kanban: { todo: [], doing: [], review: [], done: [] }, riscos: [] };
-                popularFiltro();
-                trocarProjeto(data.id);
-                alert('✅ Projeto criado!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao criar projeto: ' + error.message);
-            }
+        function calcularTermino(inicio, duracao) {
+            if (!inicio || !duracao) return '';
+            const data = new Date(inicio);
+            data.setDate(data.getDate() + parseInt(duracao));
+            return data.toISOString().split('T')[0];
         }
 
-        // ==========================================
-        // ADICIONAR TAREFA
-        // ==========================================
-        async function addTarefa(fase) {
-            const atividade = prompt('Nome da atividade:');
-            if (!atividade) return;
-            const inicio = prompt('Data de início (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
-            const duracao = parseInt(prompt('Duração em dias:', '5')) || 1;
-            const responsavel = prompt('Responsável:', usuarioLogado?.nome || '');
+        function parseValorBrasileiro(valor) {
+            if (typeof valor === 'number') return valor;
+            if (!valor) return 0;
+            let str = String(valor).trim();
+            if (str.includes(',')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            } else {
+                const pontos = str.split('.').length - 1;
+                if (pontos > 1) str = str.replace(/\./g, '');
+            }
+            const num = parseFloat(str);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function calcularEvolucaoProjeto(projeto) {
+            const fases = ['iniciacao', 'planejamento', 'execucao', 'encerramento'];
+            let total = 0, concluidas = 0;
             
-            const dataInicio = new Date(inicio);
-            dataInicio.setDate(dataInicio.getDate() + duracao);
-            const termino = dataInicio.toISOString().split('T')[0];
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('tarefas')
-                    .insert([{
-                        projeto_id: projetoAtual,
-                        fase, atividade, responsavel,
-                        status: 'Pendente',
-                        inicio, duracao, termino
-                    }])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-
-                if (!projetos[projetoAtual].tarefas) projetos[projetoAtual].tarefas = [];
-                projetos[projetoAtual].tarefas.push(data);
-                renderizarTarefas(fase);
-                atualizarMetricas();
-                alert('✅ Tarefa adicionada!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro: ' + error.message);
-            }
+            fases.forEach(fase => {
+                if (projeto[fase] && Array.isArray(projeto[fase])) {
+                    projeto[fase].forEach(t => {
+                        total++;
+                        if (t.status === 'Concluído') concluidas++;
+                    });
+                }
+            });
+            
+            return total > 0 ? Math.round((concluidas / total) * 100) : 0;
         }
 
         // ==========================================
-        // ADICIONAR TRANSAÇÃO
-        // ==========================================
-        async function addTransacao() {
-            const data = prompt('Data (DD/MM/YYYY):', new Date().toLocaleDateString('pt-BR'));
-            const descricao = prompt('Descrição:');
-            if (!descricao) return;
-            const categoria = prompt('Categoria:', 'Outros');
-            const status = confirm('Status: OK para Pago, Cancelar para Pendente') ? 'Pago' : 'Pendente';
-            const valor = parseFloat(prompt('Valor:', '0')) || 0;
-
-            if (valor <= 0) {
-                alert('Valor inválido!');
-                return;
-            }
-
-            try {
-                const { data: transacao, error } = await supabaseClient
-                    .from('transacoes')
-                    .insert([{
-                        projeto_id: projetoAtual,
-                        data, descricao, categoria, status, valor
-                    }])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-
-                if (!projetos[projetoAtual].transacoes) projetos[projetoAtual].transacoes = [];
-                projetos[projetoAtual].transacoes.push(transacao);
-                renderizarTransacoes();
-                atualizarMetricas();
-                alert('✅ Transação adicionada!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro: ' + error.message);
-            }
-        }
-
-        // ==========================================
-        // KANBAN
-        // ==========================================
-        async function addTarefaKanban() {
-            const titulo = prompt('Título da tarefa:');
-            if (!titulo) return;
-            const responsavel = prompt('Responsável:', usuarioLogado?.nome || '');
-            const coluna = 'todo';
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('kanban')
-                    .insert([{
-                        projeto_id: projetoAtual,
-                        titulo, responsavel, coluna
-                    }])
-                    .select()
-                    .single();
-
-                if (error) throw error;
-
-                projetos[projetoAtual].kanban[coluna].push(data);
-                renderizarKanban();
-                alert('✅ Tarefa Kanban adicionada!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro: ' + error.message);
-            }
-        }
-
-        // ==========================================
-        // RENDERIZAÇÃO
+        // FILTRO DE PROJETOS
         // ==========================================
         function popularFiltro() {
             const select = document.getElementById('filtro-projeto');
             select.innerHTML = '';
             
+            const optTodosMeus = document.createElement('option');
+            optTodosMeus.value = 'todos-meus';
+            optTodosMeus.textContent = '📁 Todos os Projetos (Meus)';
+            select.appendChild(optTodosMeus);
+            
+            const optTodosTime = document.createElement('option');
+            optTodosTime.value = 'todos-time';
+            optTodosTime.textContent = '👥 Projetos do Time';
+            select.appendChild(optTodosTime);
+            
             Object.entries(projetos).forEach(([id, p]) => {
                 const option = document.createElement('option');
                 option.value = id;
                 option.textContent = `${p.nome} - ${p.cliente}`;
+                if (id === projetoAtual) option.selected = true;
                 select.appendChild(option);
             });
         }
 
-        function trocarProjeto(id) {
-            projetoAtual = id;
-            const projeto = projetos[id];
-            if (!projeto) return;
-
-            document.getElementById('titulo-projeto').textContent = projeto.nome;
-            document.getElementById('subtitulo-projeto').textContent = `Cliente: ${projeto.cliente} | Gerente: ${projeto.gerente}`;
-            document.getElementById('nome-cliente').textContent = projeto.cliente;
-
-            renderizarTarefas('iniciacao');
-            renderizarTarefas('planejamento');
-            renderizarKanban();
-            renderizarTransacoes();
-            atualizarMetricas();
+        function trocarProjeto(valor) {
+            if (valor === 'todos-meus' || valor === 'todos-time') {
+                mostrarVisaoListaProjetos(valor);
+                return;
+            }
+            
+            projetoAtual = valor;
+            const projeto = projetos[valor];
+            if (projeto) {
+                document.getElementById('titulo-projeto').textContent = projeto.nome;
+                document.getElementById('subtitulo-projeto').textContent = `Cliente: ${projeto.cliente} | Gerente: ${projeto.gerente}`;
+                document.getElementById('nome-cliente').textContent = projeto.cliente;
+                renderizarTudo();
+            }
         }
 
-        function renderizarTarefas(fase) {
-            const tbody = document.getElementById(`tbody-${fase}`);
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            const projeto = projetos[projetoAtual];
-            if (!projeto || !projeto.tarefas) return;
-
-            const tarefasFase = projeto.tarefas.filter(t => t.fase === fase);
+        function mostrarVisaoListaProjetos(tipo) {
+            let projetosFiltrados = [];
+            let titulo = '';
             
-            tarefasFase.forEach((t, idx) => {
+            if (tipo === 'todos-meus') {
+                projetosFiltrados = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+                titulo = 'Meus Projetos';
+            } else if (tipo === 'todos-time') {
+                projetosFiltrados = Object.entries(projetos);
+                titulo = 'Projetos do Time';
+            }
+            
+            document.getElementById('titulo-projeto').textContent = titulo;
+            document.getElementById('subtitulo-projeto').textContent = `${projetosFiltrados.length} projeto(s) encontrado(s)`;
+            document.getElementById('nome-cliente').textContent = '-';
+            
+            const secoes = ['dashboard', 'meus-projetos', 'iniciacao', 'planejamento', 'execucao-fase', 'execucao', 'monitoramento', 'encerramento', 'documentos', 'riscos', 'financeiro', 'usuarios'];
+            secoes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            
+            let listaSection = document.getElementById('lista-projetos-dinamica');
+            if (!listaSection) {
+                listaSection = document.createElement('section');
+                listaSection.id = 'lista-projetos-dinamica';
+                listaSection.className = 'bg-white rounded-lg shadow-md p-6 mb-8';
+                document.getElementById('normal-view').appendChild(listaSection);
+            }
+            
+            listaSection.style.display = 'block';
+            listaSection.innerHTML = `
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-list mr-2 text-blue-600"></i>${titulo}</h2>
+                        <p class="text-sm text-gray-500">Visão consolidada de ${tipo === 'todos-meus' ? 'seus projetos' : 'todos os projetos do time'}</p>
+                    </div>
+                    <button onclick="trocarProjeto('proj1')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+                        <i class="fas fa-arrow-left mr-2"></i>Voltar
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-blue-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Projeto</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Cliente</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Gerente</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Budget</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Evolução</th>
+                                <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Status</th>
+                                <th class="px-4 py-3 text-center font-semibold text-blue-900 uppercase">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-lista-projetos"></tbody>
+                    </table>
+                </div>
+            `;
+            
+            const tbody = document.getElementById('tbody-lista-projetos');
+            tbody.innerHTML = '';
+            
+            projetosFiltrados.forEach(([id, projeto]) => {
+                const evolucao = calcularEvolucaoProjeto(projeto);
+                const statusClass = projeto.status === 'no-prazo' ? 'bg-green-100 text-green-800' :
+                                   projeto.status === 'atencao' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                const statusText = projeto.status === 'no-prazo' ? 'No Prazo' :
+                                  projeto.status === 'atencao' ? 'Atenção' : 'Crítico';
+                
                 const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-medium">${idx + 1}</td>
-                    <td class="px-4 py-3">${t.atividade}</td>
-                    <td class="px-4 py-3">${t.inicio || '-'}</td>
-                    <td class="px-4 py-3">${t.duracao} dias</td>
-                    <td class="px-4 py-3">${t.termino || '-'}</td>
-                    <td class="px-4 py-3">${t.responsavel || '-'}</td>
+                    <td class="px-4 py-3 font-medium">${projeto.nome}</td>
+                    <td class="px-4 py-3">${projeto.cliente}</td>
+                    <td class="px-4 py-3">${projeto.gerente}</td>
+                    <td class="px-4 py-3 font-semibold">${formatarMoeda(projeto.orcamento)}</td>
                     <td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded text-xs font-semibold ${
-                            t.status === 'Concluído' ? 'bg-green-100 text-green-800' :
-                            t.status === 'Em Andamento' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                        }">${t.status}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                <div class="bg-indigo-600 h-2 rounded-full" style="width: ${evolucao}%"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-indigo-700">${evolucao}%</span>
+                        </div>
                     </td>
+                    <td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${statusText}</span></td>
                     <td class="px-4 py-3 text-center">
-                        <button onclick="removerTarefa('${t.id}', '${fase}')" class="text-red-600 hover:text-red-800">
+                        <button onclick="trocarProjeto('${id}')" class="text-blue-600 hover:text-blue-800 mx-1" title="Abrir Projeto">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // RENDERIZAÇÃO
+        // ==========================================
+        function renderizarTudo() {
+            const listaSection = document.getElementById('lista-projetos-dinamica');
+            if (listaSection) listaSection.style.display = 'none';
+            
+            const secoes = ['dashboard', 'meus-projetos', 'iniciacao', 'planejamento', 'execucao-fase', 'execucao', 'monitoramento', 'encerramento', 'documentos', 'riscos', 'financeiro', 'usuarios'];
+            secoes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'block';
+            });
+            
+            renderizarFase('iniciacao');
+            renderizarFase('planejamento');
+            renderizarFase('execucao');
+            renderizarFase('encerramento');
+            renderizarKanban();
+            renderizarDocumentos();
+            renderizarRiscos();
+            renderizarFinanceiro();
+            renderizarUsuarios();
+            renderizarMeusProjetos();
+            atualizarMetricas();
+            atualizarMonitoramento();
+        }
+
+        function renderizarMeusProjetos() {
+            const tbody = document.getElementById('tbody-meus-projetos');
+            tbody.innerHTML = '';
+            
+            if (!usuarioLogado) return;
+            
+            const projetosDoGerente = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+            
+            projetosDoGerente.forEach(([id, projeto]) => {
+                const statusClass = projeto.status === 'no-prazo' ? 'bg-green-100 text-green-800' :
+                                   projeto.status === 'atencao' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+                const statusText = projeto.status === 'no-prazo' ? 'No Prazo' :
+                                  projeto.status === 'atencao' ? 'Atenção' : 'Crítico';
+                
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${projeto.nome}</td>
+                    <td class="px-4 py-3">${projeto.cliente}</td>
+                    <td class="px-4 py-3 font-semibold">${formatarMoeda(projeto.orcamento)}</td>
+                    <td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${statusText}</span></td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="openEditarProjeto('${id}')" class="text-blue-600 hover:text-blue-800 mx-1" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="removerProjeto('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Remover">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -620,30 +1118,312 @@
             });
         }
 
+        function openEditarProjeto(projetoId) {
+            const projeto = projetos[projetoId];
+            if (!projeto) return;
+            
+            document.getElementById('edit-projeto-id').value = projetoId;
+            document.getElementById('edit-projeto-nome').value = projeto.nome;
+            document.getElementById('edit-projeto-cliente').value = projeto.cliente;
+            document.getElementById('edit-projeto-budget').value = projeto.orcamento;
+            document.getElementById('edit-projeto-status').value = projeto.status;
+            
+            document.getElementById('editar-projeto-modal').classList.add('active');
+        }
+
+        function closeEditarProjetoModal() {
+            document.getElementById('editar-projeto-modal').classList.remove('active');
+        }
+
+        function salvarEdicaoProjeto() {
+            const projetoId = document.getElementById('edit-projeto-id').value;
+            const projeto = projetos[projetoId];
+            if (!projeto) return;
+            
+            projeto.nome = document.getElementById('edit-projeto-nome').value;
+            projeto.cliente = document.getElementById('edit-projeto-cliente').value;
+            projeto.orcamento = parseValorBrasileiro(document.getElementById('edit-projeto-budget').value);
+            projeto.status = document.getElementById('edit-projeto-status').value;
+            
+            salvarDados();
+            closeEditarProjetoModal();
+            renderizarMeusProjetos();
+            popularFiltro();
+            trocarProjeto(projetoId);
+            
+            alert('Projeto atualizado com sucesso!');
+        }
+
+        function removerProjeto(projetoId) {
+            if (confirm('Tem certeza que deseja remover este projeto?')) {
+                delete projetos[projetoId];
+                salvarDados();
+                renderizarMeusProjetos();
+                popularFiltro();
+                
+                if (projetoId === projetoAtual) {
+                    const primeiroProjeto = Object.keys(projetos)[0];
+                    if (primeiroProjeto) {
+                        trocarProjeto(primeiroProjeto);
+                    }
+                }
+                
+                alert('Projeto removido com sucesso!');
+            }
+        }
+
+        function atualizarMetricas() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+
+            document.getElementById('metric-projetos').textContent = Object.keys(projetos).length;
+            document.getElementById('metric-budget').textContent = formatarMoeda(projeto.orcamento || 0);
+
+            let total = 0, concluidas = 0;
+            ['iniciacao', 'planejamento', 'execucao', 'encerramento'].forEach(fase => {
+                if (projeto[fase]) {
+                    projeto[fase].forEach(t => {
+                        total++;
+                        if (t.status === 'Concluído') concluidas++;
+                    });
+                }
+            });
+            if (projeto.kanban) {
+                const kTotal = Object.values(projeto.kanban).reduce((sum, arr) => sum + arr.length, 0);
+                total += kTotal;
+                concluidas += (projeto.kanban.done?.length || 0);
+            }
+            
+            const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+            document.getElementById('metric-tarefas').textContent = concluidas;
+            document.getElementById('metric-tarefas-pct').textContent = `${pct}% concluídas`;
+            document.getElementById('metric-evolucao').textContent = `${pct}%`;
+            document.getElementById('barra-evolucao').style.width = `${pct}%`;
+
+            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
+            document.getElementById('metric-riscos').textContent = criticos;
+            document.getElementById('riscos-criticos').textContent = criticos;
+        }
+
+        function atualizarMonitoramento() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
+            const fases = ['iniciacao', 'planejamento', 'execucao', 'encerramento'];
+            let totalGeral = 0, concluidasGeral = 0;
+            
+            fases.forEach(fase => {
+                const tarefas = projeto[fase] || [];
+                const concluidas = tarefas.filter(t => t.status === 'Concluído').length;
+                totalGeral += tarefas.length;
+                concluidasGeral += concluidas;
+            });
+            
+            const pctEvolucao = totalGeral > 0 ? Math.round((concluidasGeral / totalGeral) * 100) : 0;
+            document.getElementById('monitor-evolucao').textContent = `${pctEvolucao}%`;
+            document.getElementById('monitor-evolucao-info').textContent = `${concluidasGeral} de ${totalGeral} tarefas formais concluídas`;
+            document.getElementById('monitor-barra-evolucao').style.width = `${pctEvolucao}%`;
+            
+            const orcamento = projeto.orcamento || 0;
+            const totalGasto = (projeto.transacoes || []).reduce((sum, t) => sum + (t.valor || 0), 0);
+            const pctFin = orcamento > 0 ? Math.round((totalGasto / orcamento) * 100) : 0;
+            document.getElementById('monitor-orcamento').textContent = `${pctFin}%`;
+            document.getElementById('monitor-financeiro-info').textContent = `${formatarMoeda(totalGasto)} de ${formatarMoeda(orcamento)}`;
+            document.getElementById('monitor-barra-fin').style.width = `${Math.min(pctFin, 100)}%`;
+            
+            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
+            const altos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Alto').length : 0;
+            document.getElementById('monitor-riscos').textContent = projeto.riscos?.length || 0;
+            document.getElementById('monitor-riscos-info').textContent = `${criticos} críticos, ${altos} altos`;
+        }
+
+        function renderizarFase(fase) {
+            const tbody = document.getElementById(`tbody-${fase}`);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            
+            if (projeto[fase]) {
+                projeto[fase].forEach((t, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="px-4 py-3 font-medium">${t.id}</td>
+                        <td class="px-4 py-3"><input type="text" value="${t.atividade}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'atividade', this.value)"></td>
+                        <td class="px-4 py-3"><input type="date" value="${t.inicio}" class="editable-input" onchange="updateDataInicio('${fase}', ${idx}, this.value)"></td>
+                        <td class="px-4 py-3"><input type="number" value="${t.duracao}" min="1" class="editable-input w-20" onchange="updateDuracao('${fase}', ${idx}, this.value)"></td>
+                        <td class="px-4 py-3 font-semibold text-gray-700">${t.termino || '-'}</td>
+                        <td class="px-4 py-3"><input type="text" value="${t.responsavel}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'responsavel', this.value)"></td>
+                        <td class="px-4 py-3">
+                            <select class="editable-input bg-transparent" onchange="updateTarefa('${fase}', ${idx}, 'status', this.value)">
+                                <option ${t.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                                <option ${t.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                                <option ${t.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editTarefa('${fase}', ${idx})"><i class="fas fa-edit"></i></button>
+                            <button class="text-red-600 hover:text-red-800 mx-1" onclick="removeTarefa('${fase}', ${idx})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function addTarefa(fase) {
+            const atividade = prompt('Nome da atividade:');
+            if (!atividade) return;
+            const inicio = prompt('Data de início (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            if (!inicio) return;
+            const duracao = parseInt(prompt('Duração em dias:', '5')) || 1;
+            const responsavel = prompt('Responsável:', usuarioLogado?.nome || '');
+            const termino = calcularTermino(inicio, duracao);
+            
+            const novaTarefa = {
+                id: `${fase.charAt(0).toUpperCase()}${(projetos[projetoAtual][fase]?.length || 0) + 1}`,
+                atividade, inicio, duracao, termino,
+                responsavel: responsavel || usuarioLogado?.nome || '',
+                status: 'Pendente'
+            };
+            
+            if (!projetos[projetoAtual][fase]) projetos[projetoAtual][fase] = [];
+            projetos[projetoAtual][fase].push(novaTarefa);
+            salvarDados();
+            renderizarFase(fase);
+            atualizarMetricas();
+            atualizarMonitoramento();
+        }
+
+        function editTarefa(fase, idx) {
+            const tarefa = projetos[projetoAtual][fase][idx];
+            const novaAtividade = prompt('Nome da atividade:', tarefa.atividade);
+            if (novaAtividade === null) return;
+            const novoInicio = prompt('Data de início (YYYY-MM-DD):', tarefa.inicio);
+            const novaDuracao = parseInt(prompt('Duração em dias:', tarefa.duracao)) || tarefa.duracao;
+            const novoResponsavel = prompt('Responsável:', tarefa.responsavel);
+            const novoStatus = prompt('Status (Pendente/Em Andamento/Concluído):', tarefa.status);
+            
+            tarefa.atividade = novaAtividade;
+            tarefa.inicio = novoInicio;
+            tarefa.duracao = novaDuracao;
+            tarefa.termino = calcularTermino(novoInicio, novaDuracao);
+            tarefa.responsavel = novoResponsavel;
+            tarefa.status = novoStatus;
+            
+            salvarDados();
+            renderizarFase(fase);
+            atualizarMetricas();
+            atualizarMonitoramento();
+        }
+
+        function updateDataInicio(fase, idx, valor) {
+            projetos[projetoAtual][fase][idx].inicio = valor;
+            projetos[projetoAtual][fase][idx].termino = calcularTermino(valor, projetos[projetoAtual][fase][idx].duracao);
+            salvarDados();
+            renderizarFase(fase);
+        }
+
+        function updateDuracao(fase, idx, valor) {
+            projetos[projetoAtual][fase][idx].duracao = parseInt(valor) || 1;
+            projetos[projetoAtual][fase][idx].termino = calcularTermino(projetos[projetoAtual][fase][idx].inicio, projetos[projetoAtual][fase][idx].duracao);
+            salvarDados();
+            renderizarFase(fase);
+        }
+
+        function updateTarefa(fase, idx, campo, valor) {
+            projetos[projetoAtual][fase][idx][campo] = valor;
+            if (campo === 'status') {
+                salvarDados();
+                atualizarMetricas();
+                atualizarMonitoramento();
+            }
+        }
+
+        function removeTarefa(fase, idx) {
+            if (confirm('Remover esta tarefa?')) {
+                projetos[projetoAtual][fase].splice(idx, 1);
+                salvarDados();
+                renderizarFase(fase);
+                atualizarMetricas();
+                atualizarMonitoramento();
+            }
+        }
+
         function renderizarKanban() {
             const container = document.getElementById('kanban-container');
             container.innerHTML = '';
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
-
+            
             const colunas = [
                 { id: 'todo', titulo: 'A Fazer', cor: 'gray', bg: 'bg-gray-100' },
                 { id: 'doing', titulo: 'Em Andamento', cor: 'blue', bg: 'bg-blue-50' },
                 { id: 'review', titulo: 'Revisão', cor: 'yellow', bg: 'bg-yellow-50' },
                 { id: 'done', titulo: 'Concluído', cor: 'green', bg: 'bg-green-50' }
             ];
-
+            
+            const totais = {
+                todo: projeto.kanban.todo?.length || 0,
+                doing: projeto.kanban.doing?.length || 0,
+                review: projeto.kanban.review?.length || 0,
+                done: projeto.kanban.done?.length || 0
+            };
+            const totalKanban = Object.values(totais).reduce((a, b) => a + b, 0);
+            const taxaConclusao = totalKanban > 0 ? Math.round((totais.done / totalKanban) * 100) : 0;
+            
+            document.getElementById('kanban-total').textContent = totalKanban;
+            document.getElementById('kanban-doing-count').textContent = totais.doing;
+            document.getElementById('kanban-taxa').textContent = `${taxaConclusao}%`;
+            document.getElementById('kanban-eficiencia-texto').textContent = `${taxaConclusao}%`;
+            document.getElementById('kanban-eficiencia-barra').style.width = `${taxaConclusao}%`;
+            
+            document.getElementById('bar-todo-count').textContent = totais.todo;
+            document.getElementById('bar-doing-count').textContent = totais.doing;
+            document.getElementById('bar-review-count').textContent = totais.review;
+            document.getElementById('bar-done-count').textContent = totais.done;
+            
+            document.getElementById('bar-todo').style.width = totalKanban > 0 ? `${(totais.todo/totalKanban)*100}%` : '0%';
+            document.getElementById('bar-doing').style.width = totalKanban > 0 ? `${(totais.doing/totalKanban)*100}%` : '0%';
+            document.getElementById('bar-review').style.width = totalKanban > 0 ? `${(totais.review/totalKanban)*100}%` : '0%';
+            document.getElementById('bar-done').style.width = totalKanban > 0 ? `${(totais.done/totalKanban)*100}%` : '0%';
+            
             colunas.forEach(col => {
                 const tarefas = projeto.kanban[col.id] || [];
                 const div = document.createElement('div');
-                div.className = `${col.bg} p-4 rounded-lg`;
+                div.className = `${col.bg} p-4 rounded-lg kanban-column`;
+                div.dataset.coluna = col.id;
+                div.ondragover = allowDrop;
+                div.ondrop = drop;
+                div.ondragleave = dragLeave;
+                
                 div.innerHTML = `
-                    <h3 class="font-bold text-${col.cor === 'gray' ? 'gray' : col.cor}-800 mb-3">${col.titulo} (${tarefas.length})</h3>
-                    <div class="space-y-2">
+                    <h3 class="font-bold text-${col.cor === 'gray' ? 'gray' : col.cor}-800 mb-3 flex justify-between">
+                        ${col.titulo} 
+                        <span class="bg-${col.cor === 'gray' ? 'gray' : col.cor}-200 text-${col.cor === 'gray' ? 'gray' : col.cor}-800 text-xs px-2 py-1 rounded-full">${tarefas.length}</span>
+                    </h3>
+                    <div class="space-y-3">
                         ${tarefas.map(t => `
-                            <div class="bg-white p-3 rounded shadow-sm">
-                                <p class="text-sm font-semibold">${t.titulo}</p>
-                                <p class="text-xs text-gray-500 mt-1">${t.responsavel || '-'}</p>
+                            <div class="bg-white p-3 rounded shadow-sm border-l-4 border-${col.cor === 'gray' ? 'red' : col.cor}-500 kanban-card" 
+                                 draggable="true" 
+                                 ondragstart="drag(event, '${col.id}', '${t.id}')"
+                                 onclick="openEditarKanban('${col.id}', '${t.id}')">
+                                <p class="text-sm font-semibold mb-2">${t.titulo}</p>
+                                ${t.data ? `<p class="text-xs text-gray-500 mb-1"><i class="fas fa-calendar mr-1"></i>${formatarData(t.data)}</p>` : ''}
+                                ${t.notas ? `<p class="text-xs text-gray-600 mb-2 italic"><i class="fas fa-sticky-note mr-1"></i>${t.notas}</p>` : ''}
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://ui-avatars.com/api/?name=${t.avatar}&background=random&size=24" class="rounded-full">
+                                        <span class="text-xs text-gray-600">${t.responsavel}</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation(); openEditarKanban('${col.id}', '${t.id}')" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-800" onclick="event.stopPropagation(); removerTarefaKanban('${col.id}', '${t.id}')" title="Remover">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -652,107 +1432,462 @@
             });
         }
 
-        function renderizarTransacoes() {
-            const tbody = document.getElementById('tbody-transacoes');
-            if (!tbody) return;
-            tbody.innerHTML = '';
+        function removerTarefaKanban(coluna, taskId) {
+            if (confirm('Remover esta tarefa do Kanban?')) {
+                const projeto = projetos[projetoAtual];
+                const idx = projeto.kanban[coluna].findIndex(t => t.id === taskId);
+                if (idx > -1) {
+                    projeto.kanban[coluna].splice(idx, 1);
+                    salvarDados();
+                    renderizarKanban();
+                    atualizarMetricas();
+                }
+            }
+        }
 
+        function formatarData(data) {
+            if (!data) return '';
+            const [ano, mes, dia] = data.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        let draggedTask = null, draggedColuna = null;
+
+        function drag(event, coluna, taskId) {
+            draggedTask = taskId; draggedColuna = coluna;
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+        }
+
+        function allowDrop(event) { event.preventDefault(); event.currentTarget.classList.add('drag-over'); }
+        function dragLeave(event) { event.currentTarget.classList.remove('drag-over'); }
+
+        function drop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            const novaColuna = event.currentTarget.dataset.coluna;
+            if (!novaColuna || !draggedTask || !draggedColuna || novaColuna === draggedColuna) return;
+            
             const projeto = projetos[projetoAtual];
-            if (!projeto || !projeto.transacoes) return;
+            const tarefaIdx = projeto.kanban[draggedColuna].findIndex(t => t.id === draggedTask);
+            if (tarefaIdx > -1) {
+                const [tarefa] = projeto.kanban[draggedColuna].splice(tarefaIdx, 1);
+                projeto.kanban[novaColuna].push(tarefa);
+                salvarDados();
+                renderizarKanban();
+                atualizarMetricas();
+            }
+        }
 
-            let totalGastos = 0;
+        function openEditarKanban(coluna, taskId) {
+            const projeto = projetos[projetoAtual];
+            const tarefa = projeto.kanban[coluna].find(t => t.id === taskId);
+            if (!tarefa) return;
+            document.getElementById('edit-kanban-id').value = taskId;
+            document.getElementById('edit-kanban-coluna').value = coluna;
+            document.getElementById('edit-kanban-titulo').value = tarefa.titulo;
+            document.getElementById('edit-kanban-responsavel').value = tarefa.responsavel;
+            document.getElementById('edit-kanban-data').value = tarefa.data || '';
+            document.getElementById('edit-kanban-notas').value = tarefa.notas || '';
+            document.getElementById('editar-kanban-modal').classList.add('active');
+        }
 
-            projeto.transacoes.forEach(t => {
-                totalGastos += parseFloat(t.valor) || 0;
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="px-4 py-3">${t.data}</td>
-                    <td class="px-4 py-3 font-medium">${t.descricao}</td>
-                    <td class="px-4 py-3">${t.categoria}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded text-xs font-semibold ${
-                            t.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }">${t.status}</span>
-                    </td>
-                    <td class="px-4 py-3 text-right font-semibold">R$ ${parseFloat(t.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    <td class="px-4 py-3 text-center">
-                        <button onclick="removerTransacao('${t.id}')" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+        function closeEditarKanbanModal() { document.getElementById('editar-kanban-modal').classList.remove('active'); }
+
+        function salvarEdicaoKanban() {
+            const taskId = document.getElementById('edit-kanban-id').value;
+            const coluna = document.getElementById('edit-kanban-coluna').value;
+            const tarefa = projetos[projetoAtual].kanban[coluna].find(t => t.id === taskId);
+            if (tarefa) {
+                tarefa.titulo = document.getElementById('edit-kanban-titulo').value;
+                tarefa.responsavel = document.getElementById('edit-kanban-responsavel').value;
+                tarefa.data = document.getElementById('edit-kanban-data').value;
+                tarefa.notas = document.getElementById('edit-kanban-notas').value;
+                salvarDados();
+                renderizarKanban();
+                closeEditarKanbanModal();
+            }
+        }
+
+        function addTarefaKanban() {
+            const titulo = prompt('Título da tarefa:');
+            if (!titulo) return;
+            const responsavel = prompt('Responsável:', usuarioLogado?.nome || '');
+            const data = prompt('Data prevista (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
+            const notas = prompt('Anotações (opcional):', '');
+            const avatar = responsavel ? responsavel.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'NT';
+            
+            projetos[projetoAtual].kanban.todo.push({
+                id: 'k' + Date.now(), titulo, responsavel: responsavel || usuarioLogado?.nome || '', data, notas, avatar
             });
-
-            const orcamento = parseFloat(projeto.orcamento) || 0;
-            const reserva = parseFloat(projeto.reserva) || 0;
-            const saldo = orcamento - totalGastos - reserva;
-
-            document.getElementById('orcamento-total').textContent = `R$ ${orcamento.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('gasto-total').textContent = `R$ ${totalGastos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('reserva-total').textContent = `R$ ${reserva.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('saldo-disponivel').textContent = `R$ ${saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            salvarDados();
+            renderizarKanban();
+            atualizarMetricas();
         }
 
-        function atualizarMetricas() {
+        function openKanbanFullscreen() {
             const projeto = projetos[projetoAtual];
-            if (!projeto) return;
-
-            document.getElementById('metric-projetos').textContent = Object.keys(projetos).length;
-            document.getElementById('metric-budget').textContent = `R$ ${(parseFloat(projeto.orcamento) || 0).toLocaleString('pt-BR')}`;
-
-            const tarefas = projeto.tarefas || [];
-            const concluidas = tarefas.filter(t => t.status === 'Concluído').length;
-            const total = tarefas.length;
-            const pct = total > 0 ? Math.round((concluidas / total) * 100) : 0;
-
-            document.getElementById('metric-tarefas').textContent = concluidas;
-            document.getElementById('metric-tarefas-pct').textContent = `${pct}% concluídas`;
-            document.getElementById('metric-evolucao').textContent = `${pct}%`;
-            document.getElementById('barra-evolucao').style.width = `${pct}%`;
-
-            const criticos = projeto.riscos ? projeto.riscos.filter(r => r.nivel === 'Crítico').length : 0;
-            document.getElementById('metric-riscos').textContent = criticos;
+            document.getElementById('kanban-fullscreen-project-name').textContent = `${projeto.nome} - ${projeto.cliente}`;
+            
+            const container = document.getElementById('kanban-fullscreen-container');
+            container.innerHTML = '';
+            
+            const colunas = [
+                { id: 'todo', titulo: 'A Fazer', cor: 'gray', bg: 'bg-gray-50' },
+                { id: 'doing', titulo: 'Em Andamento', cor: 'blue', bg: 'bg-blue-50' },
+                { id: 'review', titulo: 'Revisão', cor: 'yellow', bg: 'bg-yellow-50' },
+                { id: 'done', titulo: 'Concluído', cor: 'green', bg: 'bg-green-50' }
+            ];
+            
+            colunas.forEach(col => {
+                const tarefas = projeto.kanban[col.id] || [];
+                const div = document.createElement('div');
+                div.className = `kanban-fullscreen-column ${col.bg}`;
+                div.dataset.coluna = col.id;
+                div.ondragover = allowDropFullscreen;
+                div.ondrop = dropFullscreen;
+                div.ondragleave = dragLeaveFullscreen;
+                
+                div.innerHTML = `
+                    <h3 class="font-bold text-${col.cor === 'gray' ? 'gray' : col.cor}-800 mb-4 flex justify-between items-center text-lg">
+                        ${col.titulo}
+                        <span class="bg-${col.cor === 'gray' ? 'gray' : col.cor}-200 text-${col.cor === 'gray' ? 'gray' : col.cor}-800 text-sm px-3 py-1 rounded-full">${tarefas.length}</span>
+                    </h3>
+                    <div class="flex-1 space-y-3">
+                        ${tarefas.map(t => `
+                            <div class="kanban-fullscreen-card" draggable="true" ondragstart="dragFullscreen(event, '${col.id}', '${t.id}')">
+                                <p class="font-semibold text-gray-800 mb-3">${t.titulo}</p>
+                                ${t.data ? `<p class="text-sm text-gray-600 mb-2"><i class="fas fa-calendar mr-2"></i>${formatarData(t.data)}</p>` : ''}
+                                ${t.notas ? `<p class="text-sm text-gray-600 mb-3 italic bg-gray-50 p-2 rounded"><i class="fas fa-sticky-note mr-2"></i>${t.notas}</p>` : ''}
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                                    <div class="flex items-center gap-2">
+                                        <img src="https://ui-avatars.com/api/?name=${t.avatar}&background=random&size=32" class="rounded-full">
+                                        <span class="text-sm text-gray-700 font-medium">${t.responsavel}</span>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button class="text-blue-600 hover:text-blue-800" onclick="event.stopPropagation(); openEditarKanbanFullscreen('${col.id}', '${t.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-800" onclick="event.stopPropagation(); removerTarefaKanbanFullscreen('${col.id}', '${t.id}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('kanban-fullscreen-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
-        async function removerTarefa(id, fase) {
-            if (!confirm('Remover esta tarefa?')) return;
+        function closeKanbanFullscreen() {
+            document.getElementById('kanban-fullscreen-modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+            renderizarKanban();
+            atualizarMetricas();
+        }
 
-            try {
-                await supabaseClient.from('tarefas').delete().eq('id', id);
-                
-                const idx = projetos[projetoAtual].tarefas.findIndex(t => t.id === id);
-                if (idx > -1) projetos[projetoAtual].tarefas.splice(idx, 1);
-                
-                renderizarTarefas(fase);
-                atualizarMetricas();
-                alert('✅ Tarefa removida!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro: ' + error.message);
+        function addTarefaKanbanFullscreen() {
+            addTarefaKanban();
+            openKanbanFullscreen();
+        }
+
+        function removerTarefaKanbanFullscreen(coluna, taskId) {
+            if (confirm('Remover esta tarefa do Kanban?')) {
+                const projeto = projetos[projetoAtual];
+                const idx = projeto.kanban[coluna].findIndex(t => t.id === taskId);
+                if (idx > -1) {
+                    projeto.kanban[coluna].splice(idx, 1);
+                    salvarDados();
+                    openKanbanFullscreen();
+                }
             }
         }
 
-        async function removerTransacao(id) {
-            if (!confirm('Remover esta transação?')) return;
+        let draggedTaskFullscreen = null, draggedColunaFullscreen = null;
 
-            try {
-                await supabaseClient.from('transacoes').delete().eq('id', id);
-                
-                const idx = projetos[projetoAtual].transacoes.findIndex(t => t.id === id);
-                if (idx > -1) projetos[projetoAtual].transacoes.splice(idx, 1);
-                
-                renderizarTransacoes();
-                atualizarMetricas();
-                alert('✅ Transação removida!');
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro: ' + error.message);
+        function dragFullscreen(event, coluna, taskId) {
+            draggedTaskFullscreen = taskId;
+            draggedColunaFullscreen = coluna;
+            event.target.style.opacity = '0.5';
+            event.dataTransfer.effectAllowed = 'move';
+        }
+
+        function allowDropFullscreen(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeaveFullscreen(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function dropFullscreen(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+            const novaColuna = event.currentTarget.dataset.coluna;
+            if (!novaColuna || !draggedTaskFullscreen || !draggedColunaFullscreen || novaColuna === draggedColunaFullscreen) return;
+            
+            const projeto = projetos[projetoAtual];
+            const tarefaIdx = projeto.kanban[draggedColunaFullscreen].findIndex(t => t.id === draggedTaskFullscreen);
+            if (tarefaIdx > -1) {
+                const [tarefa] = projeto.kanban[draggedColunaFullscreen].splice(tarefaIdx, 1);
+                projeto.kanban[novaColuna].push(tarefa);
+                salvarDados();
+                openKanbanFullscreen();
             }
         }
 
-        // Inicialização
-        console.log('PMO Hub com Supabase carregado!');
+        function openEditarKanbanFullscreen(coluna, taskId) {
+            openEditarKanban(coluna, taskId);
+        }
+
+        function uploadDocumento() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const nome = prompt('Nome do documento:', file.name);
+                if (!nome) return;
+                const tipo = file.name.split('.').pop().toUpperCase();
+                const tamanho = (file.size / 1024).toFixed(1) + ' KB';
+                const data = new Date().toLocaleDateString('pt-BR');
+                projetos[projetoAtual].documentos.push({ nome, tipo, tamanho, data, usuario: usuarioLogado?.nome || '' });
+                salvarDados();
+                renderizarDocumentos();
+                alert('Documento enviado com sucesso!');
+            };
+            input.click();
+        }
+
+        function renderizarDocumentos() {
+            const lista = document.getElementById('lista-documentos');
+            lista.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            if (projeto.documentos) {
+                projeto.documentos.forEach((doc, idx) => {
+                    const iconClass = doc.tipo === 'PDF' ? 'fa-file-pdf text-red-500' : doc.tipo === 'DOCX' ? 'fa-file-word text-blue-500' : doc.tipo === 'XLSX' ? 'fa-file-excel text-green-500' : 'fa-file text-gray-500';
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center p-3 hover:bg-gray-50 rounded border border-gray-100';
+                    li.innerHTML = `<div class="flex items-center"><i class="fas ${iconClass} mr-3 text-xl"></i><div><p class="font-medium">${doc.nome}</p><p class="text-xs text-gray-500">${doc.tipo} • ${doc.tamanho} • ${doc.data} • Por: ${doc.usuario}</p></div></div><div class="flex gap-2"><button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i></button><button class="text-red-600 hover:text-red-800" onclick="removeDocumento(${idx})"><i class="fas fa-trash"></i></button></div>`;
+                    lista.appendChild(li);
+                });
+            }
+        }
+
+        function removeDocumento(idx) { if (confirm('Remover documento?')) { projetos[projetoAtual].documentos.splice(idx, 1); salvarDados(); renderizarDocumentos(); } }
+
+        function addRisco() {
+            const risco = {
+                id: 'R' + String((projetos[projetoAtual].riscos?.length || 0) + 1).padStart(3, '0'),
+                descricao: prompt('Descrição do risco:'),
+                prob: prompt('Probabilidade (Alta/Média/Baixa):', 'Média'),
+                impacto: prompt('Impacto (Alto/Médio/Baixo):', 'Médio'),
+                nivel: prompt('Nível (Crítico/Alto/Médio/Baixo):', 'Médio'),
+                resposta: prompt('Plano de resposta:')
+            };
+            if (risco.descricao) {
+                if (!projetos[projetoAtual].riscos) projetos[projetoAtual].riscos = [];
+                projetos[projetoAtual].riscos.push(risco);
+                salvarDados();
+                renderizarRiscos();
+                atualizarMetricas();
+                atualizarMonitoramento();
+            }
+        }
+
+        function renderizarRiscos() {
+            const tbody = document.getElementById('tbody-riscos');
+            tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            if (projeto.riscos) {
+                projeto.riscos.forEach((r) => {
+                    const nivelClass = r.nivel === 'Crítico' ? 'bg-red-100 text-red-800' : r.nivel === 'Alto' ? 'bg-orange-100 text-orange-800' : r.nivel === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="px-4 py-3 font-medium">${r.id}</td><td class="px-4 py-3">${r.descricao}</td><td class="px-4 py-3">${r.prob}</td><td class="px-4 py-3">${r.impacto}</td><td class="px-4 py-3"><span class="${nivelClass} px-2 py-1 rounded text-xs font-semibold">${r.nivel}</span></td><td class="px-4 py-3">${r.resposta}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function addReserva() {
+            const projeto = projetos[projetoAtual];
+            const reservaAtual = projeto.reserva || 0;
+            const valorInput = prompt(`Valor da Reserva de Contingência\n\nReserva atual: ${formatarMoeda(reservaAtual)}\nBudget total: ${formatarMoeda(projeto.orcamento)}\n\nInforme o novo valor da reserva:`, reservaAtual > 0 ? reservaAtual.toString() : '');
+            if (valorInput === null) return;
+            const novoValor = parseValorBrasileiro(valorInput);
+            if (novoValor < 0) { alert('Valor inválido!'); return; }
+            projeto.reserva = novoValor;
+            salvarDados();
+            renderizarFinanceiro();
+            atualizarMonitoramento();
+        }
+
+        function editarReserva() { addReserva(); }
+
+        function addTransacao() {
+            const data = prompt('Data (DD/MM/YYYY):', new Date().toLocaleDateString('pt-BR'));
+            const descricao = prompt('Descrição:');
+            if (!descricao) return;
+            const categoria = prompt('Categoria:', 'Outros');
+            const status = confirm('Status: OK para Pago, Cancelar para Pendente') ? 'Pago' : 'Pendente';
+            const valor = parseValorBrasileiro(prompt('Valor:', '0'));
+            if (valor <= 0) { alert('Valor inválido!'); return; }
+            if (!projetos[projetoAtual].transacoes) projetos[projetoAtual].transacoes = [];
+            projetos[projetoAtual].transacoes.push({ data, descricao, categoria, tipo: 'Despesa', status, valor });
+            salvarDados();
+            renderizarFinanceiro();
+            atualizarMonitoramento();
+        }
+
+        function editTransacao(idx) {
+            const t = projetos[projetoAtual].transacoes[idx];
+            const novaData = prompt('Data:', t.data);
+            const novaDesc = prompt('Descrição:', t.descricao);
+            const novaCat = prompt('Categoria:', t.categoria);
+            const novoStatus = confirm('Status: OK para Pago, Cancelar para Pendente') ? 'Pago' : 'Pendente';
+            const novoValor = parseValorBrasileiro(prompt('Valor:', t.valor.toString()));
+            t.data = novaData; t.descricao = novaDesc; t.categoria = novaCat; t.status = novoStatus; t.valor = novoValor;
+            salvarDados();
+            renderizarFinanceiro();
+            atualizarMonitoramento();
+        }
+
+        function renderizarFinanceiro() {
+            const tbody = document.getElementById('tbody-transacoes');
+            tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            let totalGastos = 0;
+            if (projeto.transacoes) {
+                projeto.transacoes.forEach((t, idx) => {
+                    totalGastos += t.valor || 0;
+                    const statusClass = t.status === 'Pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="px-4 py-3">${t.data}</td><td class="px-4 py-3 font-medium">${t.descricao}</td><td class="px-4 py-3">${t.categoria}</td><td class="px-4 py-3"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">Despesa</span></td><td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${t.status}</span></td><td class="px-4 py-3 text-right font-semibold text-red-700">${formatarMoeda(t.valor)}</td><td class="px-4 py-3 text-center"><button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editTransacao(${idx})"><i class="fas fa-edit"></i></button><button class="text-red-600 hover:text-red-800 mx-1" onclick="removeTransacao(${idx})"><i class="fas fa-trash"></i></button></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            const reserva = projeto.reserva || 0;
+            if (reserva > 0) {
+                const trReserva = document.createElement('tr');
+                trReserva.className = 'bg-amber-50';
+                trReserva.innerHTML = `<td class="px-4 py-3">-</td><td class="px-4 py-3 font-medium text-amber-900">Reserva de Contingência</td><td class="px-4 py-3">Contingência</td><td class="px-4 py-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Reserva</span></td><td class="px-4 py-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Reservado</span></td><td class="px-4 py-3 text-right font-semibold text-amber-700">${formatarMoeda(reserva)}</td><td class="px-4 py-3 text-center"><button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editarReserva()"><i class="fas fa-edit"></i></button></td>`;
+                tbody.appendChild(trReserva);
+            }
+            const orcamento = projeto.orcamento || 0;
+            const totalComprometido = totalGastos + reserva;
+            const saldo = orcamento - totalComprometido;
+            const pctGasto = orcamento > 0 ? (totalGastos / orcamento) * 100 : 0;
+            const pctSaldo = orcamento > 0 ? (saldo / orcamento) * 100 : 100;
+            document.getElementById('orcamento-total').textContent = formatarMoeda(orcamento);
+            document.getElementById('gasto-total').textContent = formatarMoeda(totalGastos);
+            document.getElementById('pct-gasto').textContent = `${pctGasto.toFixed(1)}% do budget`;
+            document.getElementById('reserva-total').textContent = formatarMoeda(reserva);
+            document.getElementById('total-comprometido').textContent = formatarMoeda(totalComprometido);
+            document.getElementById('saldo-disponivel').textContent = formatarMoeda(saldo);
+            document.getElementById('pct-saldo').textContent = `${Math.max(0, pctSaldo).toFixed(1)}% livre`;
+            const saldoEl = document.getElementById('saldo-disponivel');
+            if (saldo < 0) saldoEl.className = 'text-xl font-bold text-red-600';
+            else if (saldo < orcamento * 0.1) saldoEl.className = 'text-xl font-bold text-orange-600';
+            else saldoEl.className = 'text-xl font-bold text-green-900';
+        }
+
+        function removeTransacao(idx) { if (confirm('Remover transação?')) { projetos[projetoAtual].transacoes.splice(idx, 1); salvarDados(); renderizarFinanceiro(); atualizarMonitoramento(); } }
+
+        function addUsuario() {
+            if (perfilAtual !== 'gerente' && perfilAtual !== 'supervisor' && perfilAtual !== 'admin') {
+                alert('Apenas Gerentes, Supervisores e Administradores podem adicionar usuários!');
+                return;
+            }
+            
+            const nome = prompt('Nome completo:'); if (!nome) return;
+            const email = prompt('Email:');
+            const grupo = prompt('Grupo (admin/supervisao/gerente/assistente):', 'gerente');
+            if (email && grupo) {
+                if (!projetos[projetoAtual].usuarios) projetos[projetoAtual].usuarios = [];
+                projetos[projetoAtual].usuarios.push({ nome, email, grupo });
+                salvarDados();
+                renderizarUsuarios();
+            }
+        }
+
+        function renderizarUsuarios() {
+            const tbody = document.getElementById('tbody-usuarios');
+            tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
+            if (projeto.usuarios) {
+                projeto.usuarios.forEach((u, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="px-4 py-3 flex items-center"><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(u.nome)}&background=random&size=32" class="rounded-full mr-3"><span class="font-medium">${u.nome}</span></td><td class="px-4 py-3">${u.email}</td><td class="px-4 py-3"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold uppercase">${u.grupo}</span></td><td class="px-4 py-3 text-xs">${permissoesTexto[u.grupo] || 'Sem permissões'}</td><td class="px-4 py-3 text-center"><button class="text-red-600 hover:text-red-800" onclick="removeUsuario(${idx})"><i class="fas fa-trash"></i></button></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function removeUsuario(idx) { if (confirm('Remover usuário?')) { projetos[projetoAtual].usuarios.splice(idx, 1); salvarDados(); renderizarUsuarios(); } }
+
+        function novoProjeto() {
+            const nome = prompt('Nome do Projeto:'); if (!nome) return;
+            const cliente = prompt('Nome do Cliente:');
+            const gerente = prompt('Gerente Responsável:', usuarioLogado?.nome || '');
+            const orcamento = parseValorBrasileiro(prompt('Budget do Projeto:', '0'));
+            const reserva = parseValorBrasileiro(prompt('Reserva de Contingência (opcional):', '0'));
+            if (cliente) {
+                const novoId = 'proj' + (Object.keys(projetos).length + 1);
+                projetos[novoId] = { nome, cliente, gerente: gerente || usuarioLogado?.nome || '', orcamento, reserva: reserva || 0, status: 'no-prazo', iniciacao: [], planejamento: [], execucao: [], encerramento: [], kanban: { todo: [], doing: [], review: [], done: [] }, documentos: [], riscos: [], transacoes: [], usuarios: [{ nome: gerente || usuarioLogado?.nome || '', email: 'gerente@empresa.com', grupo: 'gerente' }] };
+                salvarDados();
+                const select = document.getElementById('filtro-projeto');
+                const option = document.createElement('option');
+                option.value = novoId; option.textContent = `${nome} - ${cliente}`;
+                select.appendChild(option);
+                trocarProjeto(novoId);
+                alert(`Projeto "${nome}" criado!\nBudget: ${formatarMoeda(orcamento)}\nReserva: ${formatarMoeda(reserva || 0)}`);
+            }
+        }
+
+        function exportarProjeto() {
+            const tipo = confirm('OK para Excel, Cancelar para PDF') ? 'excel' : 'pdf';
+            const projeto = projetos[projetoAtual];
+            if (tipo === 'excel') {
+                const wb = XLSX.utils.book_new();
+                const info = XLSX.utils.aoa_to_sheet([['RELATÓRIO PMBOK'], [], ['Projeto:', projeto.nome], ['Cliente:', projeto.cliente], ['Gerente:', projeto.gerente], ['Budget:', formatarMoeda(projeto.orcamento)], ['Reserva:', formatarMoeda(projeto.reserva || 0)], ['Data:', new Date().toLocaleDateString('pt-BR')]]);
+                XLSX.utils.book_append_sheet(wb, info, 'Informações');
+                const fases = [{ id: 'iniciacao', nome: '1. Iniciação' }, { id: 'planejamento', nome: '2. Planejamento' }, { id: 'execucao', nome: '3. Execução' }, { id: 'encerramento', nome: '4. Encerramento' }];
+                fases.forEach(fase => {
+                    const dados = projeto[fase] || [];
+                    const rows = [['ID', 'Atividade', 'Início', 'Duração', 'Término', 'Responsável', 'Status']];
+                    dados.forEach(t => rows.push([t.id, t.atividade, t.inicio, t.duracao, t.termino, t.responsavel, t.status]));
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), fase.nome);
+                });
+                const kanbanRows = [['Coluna', 'Título', 'Responsável', 'Data', 'Notas']];
+                Object.entries(projeto.kanban).forEach(([col, tarefas]) => { tarefas.forEach(t => kanbanRows.push([col, t.titulo, t.responsavel, t.data, t.notas])); });
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kanbanRows), 'Kanban (Equipe)');
+                const finRows = [['Tipo', 'Data', 'Descrição', 'Categoria', 'Status', 'Valor']];
+                projeto.transacoes?.forEach(t => finRows.push(['Despesa', t.data, t.descricao, t.categoria, t.status, t.valor]));
+                if (projeto.reserva > 0) finRows.push(['Reserva', '-', 'Reserva de Contingência', 'Contingência', 'Reservado', projeto.reserva]);
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(finRows), 'Financeiro');
+                XLSX.writeFile(wb, `PMBOK_${projeto.nome.replace(/\s+/g, '_')}.xlsx`);
+            } else {
+                const element = document.createElement('div');
+                element.style.padding = '20px';
+                element.innerHTML = `<h1 style="text-align: center; color: #1e40af;">Relatório PMBOK - ${projeto.nome}</h1><p style="text-align: center; color: #6b7280;">Cliente: ${projeto.cliente} | Gerente: ${projeto.gerente}</p><p style="text-align: center;"><strong>Budget:</strong> ${formatarMoeda(projeto.orcamento)} | <strong>Reserva:</strong> ${formatarMoeda(projeto.reserva || 0)}</p><hr style="margin: 20px 0;"><h2 style="color: #10b981;">1. Iniciação</h2><table style="width: 100%; border-collapse: collapse; font-size: 12px;"><tr style="background: #10b981; color: white;"><th style="padding: 8px; border: 1px solid #ddd;">ID</th><th style="padding: 8px; border: 1px solid #ddd;">Atividade</th><th style="padding: 8px; border: 1px solid #ddd;">Início</th><th style="padding: 8px; border: 1px solid #ddd;">Duração</th><th style="padding: 8px; border: 1px solid #ddd;">Término</th><th style="padding: 8px; border: 1px solid #ddd;">Status</th></tr>${(projeto.iniciacao || []).map(t => `<tr><td style="padding: 6px; border: 1px solid #ddd;">${t.id}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.atividade}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.inicio}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.duracao}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.termino}</td><td style="padding: 6px; border: 1px solid #ddd;">${t.status}</td></tr>`).join('')}</table>`;
+                html2pdf().set({ margin: 10, filename: `PMBOK_${projeto.nome}.pdf` }).from(element).save();
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { closeEditarKanbanModal(); closeKanbanFullscreen(); closeEditarProjetoModal(); }
+        });
+
+        window.onload = function() { 
+            popularFiltro(); 
+        };
     </script>
 </body>
 </html>
