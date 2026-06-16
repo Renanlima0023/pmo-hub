@@ -841,6 +841,7 @@
     </div>
 
     <script>
+
         // ==========================================
         // ⚠️ CONFIGURAÇÃO DO SUPABASE
         // SUBSTITUA PELAS SUAS CREDENCIAIS!
@@ -848,21 +849,17 @@
         const SUPABASE_URL = 'sb_publishable_6FC1dhL0rg6A9G7Ji71Iyg_KbKUml01';
         const SUPABASE_KEY = 'sb_secret_sq_vRtQ_MpaNtJMrU2L6Qg_zaquYGOi';
 
-
-
         // ==========================================
         // SISTEMA DE USUÁRIOS COM SENHA
         // ==========================================
         let usuariosSistema = {};
         
-        // Carregar usuários do localStorage
         function carregarUsuarios() {
             try {
                 const salvos = localStorage.getItem('pmo_usuarios');
                 if (salvos) {
                     usuariosSistema = JSON.parse(salvos);
                 } else {
-                    // Usuário padrão
                     usuariosSistema = {
                         'admin@empresa.com': { 
                             nome: 'Administrador', 
@@ -1080,13 +1077,11 @@
                 return;
             }
 
-            // Criar novo usuário
             usuariosSistema[email] = { nome, grupo, senha, email };
             salvarUsuarios();
 
             alert(`Conta criada com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
 
-            // Fechar modal de cadastro e voltar ao login
             document.getElementById('cadastro-modal').classList.remove('active');
             document.getElementById('login-modal').classList.add('active');
             document.getElementById('login-email').value = email;
@@ -1095,7 +1090,7 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE REDEFINIÇÃO DE SENHA (usuário comum)
+        // FUNÇÕES DE REDEFINIÇÃO DE SENHA
         // ==========================================
         function mostrarRedefinirSenha() {
             document.getElementById('login-modal').classList.remove('active');
@@ -1146,7 +1141,6 @@
                 return;
             }
 
-            // Redefinir senha
             usuariosSistema[email].senha = novaSenha;
             salvarUsuarios();
 
@@ -1214,7 +1208,6 @@
                 return;
             }
 
-            // Redefinir senha do usuário
             usuariosSistema[usuarioAdminRedefinindo].senha = novaSenha;
             salvarUsuarios();
 
@@ -1229,16 +1222,14 @@
         }
 
         // ==========================================
-        // FUNÇÃO PARA ADICIONAR USUÁRIO (CORRIGIDA)
+        // FUNÇÃO PARA ADICIONAR USUÁRIO
         // ==========================================
         function addUsuario() {
-            // Verifica se o usuário tem permissão
             if (perfilAtual !== 'admin' && perfilAtual !== 'supervisor') {
                 alert('Apenas Administradores e Supervisores podem adicionar usuários!');
                 return;
             }
 
-            // Abrir modal de cadastro para o admin adicionar usuário
             document.getElementById('cadastro-modal').classList.add('active');
             document.getElementById('cadastro-error').classList.add('hidden');
             document.getElementById('cadastro-nome').value = '';
@@ -1246,67 +1237,14 @@
             document.getElementById('cadastro-senha').value = '';
             document.getElementById('cadastro-confirmar').value = '';
             
-            // Mudar título do modal para indicar que é admin adicionando
             document.querySelector('#cadastro-modal .text-center h2').textContent = 'Adicionar Novo Usuário';
             document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para criar um novo usuário no sistema';
         }
-
-        // Sobrescrever a função fazerCadastro para funcionar tanto para auto-cadastro quanto para admin
-        const fazerCadastroOriginal = fazerCadastro;
-        fazerCadastro = function() {
-            const nome = document.getElementById('cadastro-nome').value.trim();
-            const email = document.getElementById('cadastro-email').value.trim().toLowerCase();
-            const senha = document.getElementById('cadastro-senha').value;
-            const confirmar = document.getElementById('cadastro-confirmar').value;
-            const grupo = document.getElementById('cadastro-grupo').value;
-            const errorDiv = document.getElementById('cadastro-error');
-
-            errorDiv.classList.add('hidden');
-
-            if (!nome || !email || !senha || !confirmar) {
-                errorDiv.textContent = 'Preencha todos os campos!';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            if (senha.length < 6) {
-                errorDiv.textContent = 'A senha deve ter pelo menos 6 caracteres!';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            if (senha !== confirmar) {
-                errorDiv.textContent = 'As senhas não coincidem!';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            if (usuariosSistema[email]) {
-                errorDiv.textContent = 'Este e-mail já está cadastrado!';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
-            // Criar novo usuário
-            usuariosSistema[email] = { nome, grupo, senha, email };
-            salvarUsuarios();
-
-            alert(`Usuário criado com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
-
-            // Fechar modal e atualizar lista
-            document.getElementById('cadastro-modal').classList.remove('active');
-            renderizarUsuarios();
-            
-            // Restaurar título do modal
-            document.querySelector('#cadastro-modal .text-center h2').textContent = 'Criar Nova Conta';
-            document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para se cadastrar';
-        };
 
         // Permitir login com Enter
         document.addEventListener('DOMContentLoaded', function() {
             carregarUsuarios();
             
-            // Login com Enter
             const senhaInput = document.getElementById('login-senha');
             if (senhaInput) {
                 senhaInput.addEventListener('keypress', function(e) {
@@ -1320,25 +1258,20 @@
                 });
             }
 
-            // Cadastro com Enter
             document.getElementById('cadastro-confirmar').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') fazerCadastro();
             });
 
-            // Redefinir com Enter
             document.getElementById('redefinir-confirmar').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') enviarRedefinicao();
             });
 
-            // Redefinir Admin com Enter
             document.getElementById('redefinir-admin-confirmar').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') salvarRedefinicaoAdmin();
             });
 
-            // Inicializar
             popularFiltro();
             
-            // Se não houver usuário logado, mostrar modal de login
             if (!usuarioLogado) {
                 document.getElementById('login-modal').classList.add('active');
             }
@@ -1389,17 +1322,15 @@
         }
 
         // ==========================================
-        // EXPORTAÇÃO PARA PDF (APENAS CRONOGRAMA)
+        // EXPORTAÇÃO PARA PDF
         // ==========================================
         function exportarProjeto() {
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
 
-            // Criar elemento para o PDF
             const element = document.createElement('div');
             element.className = 'pdf-cronograma';
             
-            // Cabeçalho
             let html = `
                 <h1>📋 Cronograma do Projeto</h1>
                 <div class="subtitle">
@@ -1410,7 +1341,6 @@
                 </div>
             `;
 
-            // Fases
             const fases = [
                 { id: 'iniciacao', titulo: '1. FASE DE INICIAÇÃO', cor: 'iniciacao' },
                 { id: 'planejamento', titulo: '2. FASE DE PLANEJAMENTO', cor: 'planejamento' },
@@ -1475,7 +1405,6 @@
                 `;
             }
 
-            // Rodapé
             html += `
                 <div class="footer">
                     Documento gerado automaticamente pelo PMO Project Hub<br>
@@ -1485,7 +1414,6 @@
 
             element.innerHTML = html;
 
-            // Configurações do PDF
             const opt = {
                 margin: [10, 10, 10, 10],
                 filename: `Cronograma_${projeto.nome.replace(/\s+/g, '_')}.pdf`,
@@ -1494,7 +1422,6 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Gerar PDF
             html2pdf().set(opt).from(element).save();
         }
 
@@ -1636,7 +1563,7 @@
         }
 
         // ==========================================
-        // RENDERIZAÇÃO
+        // RENDERIZAÇÃO PRINCIPAL
         // ==========================================
         function renderizarTudo() {
             const listaSection = document.getElementById('lista-projetos-dinamica');
@@ -1663,52 +1590,50 @@
         }
 
         // ==========================================
-        // RENDERIZAÇÃO DE USUÁRIOS (COM BOTÃO REDEFINIR PARA TODOS)
+        // RENDERIZAÇÃO DE FASES (CORRIGIDA - usa projetoAtual)
         // ==========================================
-        function renderizarUsuarios() {
-            const tbody = document.getElementById('tbody-usuarios');
+        function renderizarFase(fase) {
+            const tbody = document.getElementById(`tbody-${fase}`);
+            if (!tbody) return;
             tbody.innerHTML = '';
-            const projeto = projetos[projetoAtual];
-            const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
             
-            // Mostrar usuários do sistema (globais)
-            Object.entries(usuariosSistema).forEach(([email, usuario]) => {
-                // Verificar se o usuário está associado ao projeto atual
-                const noProjeto = projeto.usuarios?.some(u => u.email === email);
-                // Mostrar todos os usuários, independente de estar no projeto
-                
+            // Garantir que estamos usando o projeto atual corretamente
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
+            const tarefas = projeto[fase] || [];
+            
+            if (tarefas.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                            <i class="fas fa-inbox text-2xl block mb-2"></i>
+                            Nenhuma tarefa cadastrada nesta fase.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tarefas.forEach((t, idx) => {
                 const tr = document.createElement('tr');
-                const isAdmin = usuario.grupo === 'admin';
-                const isCurrentUser = usuarioLogado && usuarioLogado.email === email;
-                
-                // Verificar permissão para redefinir senha
-                // Admin pode redefinir qualquer um (inclusive outros admins)
-                // Supervisor pode redefinir não-admins
-                const podeRedefinir = perfilAtual === 'admin' || (perfilAtual === 'supervisor' && !isAdmin);
-                
-                // Se for o próprio usuário, sempre pode redefinir (via outro modal)
-                const podeRedefinirProprio = isCurrentUser;
-                
                 tr.innerHTML = `
-                    <td class="px-4 py-3 flex items-center">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random&size=32" class="rounded-full mr-3">
-                        <span class="font-medium">${usuario.nome}</span>
-                        ${isAdmin ? '<span class="badge-admin ml-2">Admin</span>' : ''}
-                        ${noProjeto ? '' : '<span class="text-xs text-gray-400 ml-2">(Fora do projeto)</span>'}
+                    <td class="px-4 py-3 font-medium">${t.id}</td>
+                    <td class="px-4 py-3"><input type="text" value="${t.atividade}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'atividade', this.value)"></td>
+                    <td class="px-4 py-3"><input type="date" value="${t.inicio}" class="editable-input" onchange="updateDataInicio('${fase}', ${idx}, this.value)"></td>
+                    <td class="px-4 py-3"><input type="number" value="${t.duracao}" min="1" class="editable-input w-20" onchange="updateDuracao('${fase}', ${idx}, this.value)"></td>
+                    <td class="px-4 py-3 font-semibold text-gray-700">${t.termino || '-'}</td>
+                    <td class="px-4 py-3"><input type="text" value="${t.responsavel}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'responsavel', this.value)"></td>
+                    <td class="px-4 py-3">
+                        <select class="editable-input bg-transparent" onchange="updateTarefa('${fase}', ${idx}, 'status', this.value)">
+                            <option ${t.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                            <option ${t.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
+                            <option ${t.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                        </select>
                     </td>
-                    <td class="px-4 py-3">${usuario.email}</td>
-                    <td class="px-4 py-3"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold uppercase">${usuario.grupo}</span></td>
-                    <td class="px-4 py-3 text-xs">${permissoesTexto[usuario.grupo] || 'Sem permissões'}</td>
                     <td class="px-4 py-3 text-center">
-                        ${podeRedefinirProprio ? `
-                            <button onclick="abrirRedefinirAdmin('${usuario.email}')" class="btn-redefinir-admin" title="Redefinir sua senha">
-                                <i class="fas fa-key mr-1"></i>Redefinir Senha
-                            </button>
-                        ` : podeRedefinir ? `
-                            <button onclick="abrirRedefinirAdmin('${usuario.email}')" class="btn-redefinir" title="Redefinir senha do usuário">
-                                <i class="fas fa-key mr-1"></i>Redefinir Senha
-                            </button>
-                        ` : isAdmin ? '<span class="text-xs text-gray-400">Admin</span>' : '<span class="text-xs text-gray-400">-</span>'}
+                        <button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editTarefa('${fase}', ${idx})"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-600 hover:text-red-800 mx-1" onclick="removeTarefa('${fase}', ${idx})"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1716,42 +1641,12 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE FASES E TAREFAS
+        // FUNÇÕES DE TAREFAS
         // ==========================================
-        function renderizarFase(fase) {
-            const tbody = document.getElementById(`tbody-${fase}`);
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            const projeto = projetos[projetoAtual];
-            
-            if (projeto[fase]) {
-                projeto[fase].forEach((t, idx) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="px-4 py-3 font-medium">${t.id}</td>
-                        <td class="px-4 py-3"><input type="text" value="${t.atividade}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'atividade', this.value)"></td>
-                        <td class="px-4 py-3"><input type="date" value="${t.inicio}" class="editable-input" onchange="updateDataInicio('${fase}', ${idx}, this.value)"></td>
-                        <td class="px-4 py-3"><input type="number" value="${t.duracao}" min="1" class="editable-input w-20" onchange="updateDuracao('${fase}', ${idx}, this.value)"></td>
-                        <td class="px-4 py-3 font-semibold text-gray-700">${t.termino || '-'}</td>
-                        <td class="px-4 py-3"><input type="text" value="${t.responsavel}" class="editable-input" onchange="updateTarefa('${fase}', ${idx}, 'responsavel', this.value)"></td>
-                        <td class="px-4 py-3">
-                            <select class="editable-input bg-transparent" onchange="updateTarefa('${fase}', ${idx}, 'status', this.value)">
-                                <option ${t.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
-                                <option ${t.status === 'Em Andamento' ? 'selected' : ''}>Em Andamento</option>
-                                <option ${t.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
-                            </select>
-                        </td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editTarefa('${fase}', ${idx})"><i class="fas fa-edit"></i></button>
-                            <button class="text-red-600 hover:text-red-800 mx-1" onclick="removeTarefa('${fase}', ${idx})"><i class="fas fa-trash"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
-
         function addTarefa(fase) {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             const atividade = prompt('Nome da atividade:');
             if (!atividade) return;
             const inicio = prompt('Data de início (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
@@ -1761,14 +1656,14 @@
             const termino = calcularTermino(inicio, duracao);
             
             const novaTarefa = {
-                id: `${fase.charAt(0).toUpperCase()}${(projetos[projetoAtual][fase]?.length || 0) + 1}`,
+                id: `${fase.charAt(0).toUpperCase()}${(projeto[fase]?.length || 0) + 1}`,
                 atividade, inicio, duracao, termino,
                 responsavel: responsavel || usuarioLogado?.nome || '',
                 status: 'Pendente'
             };
             
-            if (!projetos[projetoAtual][fase]) projetos[projetoAtual][fase] = [];
-            projetos[projetoAtual][fase].push(novaTarefa);
+            if (!projeto[fase]) projeto[fase] = [];
+            projeto[fase].push(novaTarefa);
             salvarDados();
             renderizarFase(fase);
             atualizarMetricas();
@@ -1776,7 +1671,12 @@
         }
 
         function editTarefa(fase, idx) {
-            const tarefa = projetos[projetoAtual][fase][idx];
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto[fase]) return;
+            
+            const tarefa = projeto[fase][idx];
+            if (!tarefa) return;
+            
             const novaAtividade = prompt('Nome da atividade:', tarefa.atividade);
             if (novaAtividade === null) return;
             const novoInicio = prompt('Data de início (YYYY-MM-DD):', tarefa.inicio);
@@ -1798,21 +1698,27 @@
         }
 
         function updateDataInicio(fase, idx, valor) {
-            projetos[projetoAtual][fase][idx].inicio = valor;
-            projetos[projetoAtual][fase][idx].termino = calcularTermino(valor, projetos[projetoAtual][fase][idx].duracao);
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto[fase]) return;
+            projeto[fase][idx].inicio = valor;
+            projeto[fase][idx].termino = calcularTermino(valor, projeto[fase][idx].duracao);
             salvarDados();
             renderizarFase(fase);
         }
 
         function updateDuracao(fase, idx, valor) {
-            projetos[projetoAtual][fase][idx].duracao = parseInt(valor) || 1;
-            projetos[projetoAtual][fase][idx].termino = calcularTermino(projetos[projetoAtual][fase][idx].inicio, projetos[projetoAtual][fase][idx].duracao);
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto[fase]) return;
+            projeto[fase][idx].duracao = parseInt(valor) || 1;
+            projeto[fase][idx].termino = calcularTermino(projeto[fase][idx].inicio, projeto[fase][idx].duracao);
             salvarDados();
             renderizarFase(fase);
         }
 
         function updateTarefa(fase, idx, campo, valor) {
-            projetos[projetoAtual][fase][idx][campo] = valor;
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto[fase]) return;
+            projeto[fase][idx][campo] = valor;
             if (campo === 'status') {
                 salvarDados();
                 atualizarMetricas();
@@ -1822,7 +1728,9 @@
 
         function removeTarefa(fase, idx) {
             if (confirm('Remover esta tarefa?')) {
-                projetos[projetoAtual][fase].splice(idx, 1);
+                const projeto = projetos[projetoAtual];
+                if (!projeto || !projeto[fase]) return;
+                projeto[fase].splice(idx, 1);
                 salvarDados();
                 renderizarFase(fase);
                 atualizarMetricas();
@@ -1831,13 +1739,20 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE KANBAN
+        // RENDERIZAÇÃO DE KANBAN (CORRIGIDA)
         // ==========================================
         function renderizarKanban() {
             const container = document.getElementById('kanban-container');
             container.innerHTML = '';
+            
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
+            
+            // Verificar se o projeto tem kanban
+            if (!projeto.kanban) {
+                projeto.kanban = { todo: [], doing: [], review: [], done: [] };
+                salvarDados();
+            }
             
             const colunas = [
                 { id: 'todo', titulo: 'A Fazer', cor: 'gray', bg: 'bg-gray-100' },
@@ -1866,10 +1781,11 @@
             document.getElementById('bar-review-count').textContent = totais.review;
             document.getElementById('bar-done-count').textContent = totais.done;
             
-            document.getElementById('bar-todo').style.width = totalKanban > 0 ? `${(totais.todo/totalKanban)*100}%` : '0%';
-            document.getElementById('bar-doing').style.width = totalKanban > 0 ? `${(totais.doing/totalKanban)*100}%` : '0%';
-            document.getElementById('bar-review').style.width = totalKanban > 0 ? `${(totais.review/totalKanban)*100}%` : '0%';
-            document.getElementById('bar-done').style.width = totalKanban > 0 ? `${(totais.done/totalKanban)*100}%` : '0%';
+            const total = totalKanban || 1;
+            document.getElementById('bar-todo').style.width = `${(totais.todo/total)*100}%`;
+            document.getElementById('bar-doing').style.width = `${(totais.doing/total)*100}%`;
+            document.getElementById('bar-review').style.width = `${(totais.review/total)*100}%`;
+            document.getElementById('bar-done').style.width = `${(totais.done/total)*100}%`;
             
             colunas.forEach(col => {
                 const tarefas = projeto.kanban[col.id] || [];
@@ -1919,6 +1835,7 @@
         function removerTarefaKanban(coluna, taskId) {
             if (confirm('Remover esta tarefa do Kanban?')) {
                 const projeto = projetos[projetoAtual];
+                if (!projeto || !projeto.kanban) return;
                 const idx = projeto.kanban[coluna].findIndex(t => t.id === taskId);
                 if (idx > -1) {
                     projeto.kanban[coluna].splice(idx, 1);
@@ -1953,6 +1870,8 @@
             if (!novaColuna || !draggedTask || !draggedColuna || novaColuna === draggedColuna) return;
             
             const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto.kanban) return;
+            
             const tarefaIdx = projeto.kanban[draggedColuna].findIndex(t => t.id === draggedTask);
             if (tarefaIdx > -1) {
                 const [tarefa] = projeto.kanban[draggedColuna].splice(tarefaIdx, 1);
@@ -1965,6 +1884,7 @@
 
         function openEditarKanban(coluna, taskId) {
             const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto.kanban) return;
             const tarefa = projeto.kanban[coluna].find(t => t.id === taskId);
             if (!tarefa) return;
             document.getElementById('edit-kanban-id').value = taskId;
@@ -1981,7 +1901,9 @@
         function salvarEdicaoKanban() {
             const taskId = document.getElementById('edit-kanban-id').value;
             const coluna = document.getElementById('edit-kanban-coluna').value;
-            const tarefa = projetos[projetoAtual].kanban[coluna].find(t => t.id === taskId);
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto.kanban) return;
+            const tarefa = projeto.kanban[coluna].find(t => t.id === taskId);
             if (tarefa) {
                 tarefa.titulo = document.getElementById('edit-kanban-titulo').value;
                 tarefa.responsavel = document.getElementById('edit-kanban-responsavel').value;
@@ -1994,6 +1916,9 @@
         }
 
         function addTarefaKanban() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             const titulo = prompt('Título da tarefa:');
             if (!titulo) return;
             const responsavel = prompt('Responsável:', usuarioLogado?.nome || '');
@@ -2001,7 +1926,8 @@
             const notas = prompt('Anotações (opcional):', '');
             const avatar = responsavel ? responsavel.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'NT';
             
-            projetos[projetoAtual].kanban.todo.push({
+            if (!projeto.kanban) projeto.kanban = { todo: [], doing: [], review: [], done: [] };
+            projeto.kanban.todo.push({
                 id: 'k' + Date.now(), titulo, responsavel: responsavel || usuarioLogado?.nome || '', data, notas, avatar
             });
             salvarDados();
@@ -2010,10 +1936,12 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE KANBAN FULLSCREEN
+        // KANBAN FULLSCREEN
         // ==========================================
         function openKanbanFullscreen() {
             const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             document.getElementById('kanban-fullscreen-project-name').textContent = `${projeto.nome} - ${projeto.cliente}`;
             
             const container = document.getElementById('kanban-fullscreen-container');
@@ -2086,6 +2014,7 @@
         function removerTarefaKanbanFullscreen(coluna, taskId) {
             if (confirm('Remover esta tarefa do Kanban?')) {
                 const projeto = projetos[projetoAtual];
+                if (!projeto || !projeto.kanban) return;
                 const idx = projeto.kanban[coluna].findIndex(t => t.id === taskId);
                 if (idx > -1) {
                     projeto.kanban[coluna].splice(idx, 1);
@@ -2120,6 +2049,8 @@
             if (!novaColuna || !draggedTaskFullscreen || !draggedColunaFullscreen || novaColuna === draggedColunaFullscreen) return;
             
             const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto.kanban) return;
+            
             const tarefaIdx = projeto.kanban[draggedColunaFullscreen].findIndex(t => t.id === draggedTaskFullscreen);
             if (tarefaIdx > -1) {
                 const [tarefa] = projeto.kanban[draggedColunaFullscreen].splice(tarefaIdx, 1);
@@ -2147,7 +2078,9 @@
                 const tipo = file.name.split('.').pop().toUpperCase();
                 const tamanho = (file.size / 1024).toFixed(1) + ' KB';
                 const data = new Date().toLocaleDateString('pt-BR');
-                projetos[projetoAtual].documentos.push({ nome, tipo, tamanho, data, usuario: usuarioLogado?.nome || '' });
+                const projeto = projetos[projetoAtual];
+                if (!projeto) return;
+                projeto.documentos.push({ nome, tipo, tamanho, data, usuario: usuarioLogado?.nome || '' });
                 salvarDados();
                 renderizarDocumentos();
                 alert('Documento enviado com sucesso!');
@@ -2159,25 +2092,36 @@
             const lista = document.getElementById('lista-documentos');
             lista.innerHTML = '';
             const projeto = projetos[projetoAtual];
-            if (projeto.documentos) {
-                projeto.documentos.forEach((doc, idx) => {
-                    const iconClass = doc.tipo === 'PDF' ? 'fa-file-pdf text-red-500' : doc.tipo === 'DOCX' ? 'fa-file-word text-blue-500' : doc.tipo === 'XLSX' ? 'fa-file-excel text-green-500' : 'fa-file text-gray-500';
-                    const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center p-3 hover:bg-gray-50 rounded border border-gray-100';
-                    li.innerHTML = `<div class="flex items-center"><i class="fas ${iconClass} mr-3 text-xl"></i><div><p class="font-medium">${doc.nome}</p><p class="text-xs text-gray-500">${doc.tipo} • ${doc.tamanho} • ${doc.data} • Por: ${doc.usuario}</p></div></div><div class="flex gap-2"><button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i></button><button class="text-red-600 hover:text-red-800" onclick="removeDocumento(${idx})"><i class="fas fa-trash"></i></button></div>`;
-                    lista.appendChild(li);
-                });
-            }
+            if (!projeto || !projeto.documentos) return;
+            
+            projeto.documentos.forEach((doc, idx) => {
+                const iconClass = doc.tipo === 'PDF' ? 'fa-file-pdf text-red-500' : doc.tipo === 'DOCX' ? 'fa-file-word text-blue-500' : doc.tipo === 'XLSX' ? 'fa-file-excel text-green-500' : 'fa-file text-gray-500';
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center p-3 hover:bg-gray-50 rounded border border-gray-100';
+                li.innerHTML = `<div class="flex items-center"><i class="fas ${iconClass} mr-3 text-xl"></i><div><p class="font-medium">${doc.nome}</p><p class="text-xs text-gray-500">${doc.tipo} • ${doc.tamanho} • ${doc.data} • Por: ${doc.usuario}</p></div></div><div class="flex gap-2"><button class="text-blue-600 hover:text-blue-800"><i class="fas fa-download"></i></button><button class="text-red-600 hover:text-red-800" onclick="removeDocumento(${idx})"><i class="fas fa-trash"></i></button></div>`;
+                lista.appendChild(li);
+            });
         }
 
-        function removeDocumento(idx) { if (confirm('Remover documento?')) { projetos[projetoAtual].documentos.splice(idx, 1); salvarDados(); renderizarDocumentos(); } }
+        function removeDocumento(idx) { 
+            if (confirm('Remover documento?')) { 
+                const projeto = projetos[projetoAtual];
+                if (!projeto || !projeto.documentos) return;
+                projeto.documentos.splice(idx, 1); 
+                salvarDados(); 
+                renderizarDocumentos(); 
+            } 
+        }
 
         // ==========================================
         // FUNÇÕES DE RISCOS
         // ==========================================
         function addRisco() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             const risco = {
-                id: 'R' + String((projetos[projetoAtual].riscos?.length || 0) + 1).padStart(3, '0'),
+                id: 'R' + String((projeto.riscos?.length || 0) + 1).padStart(3, '0'),
                 descricao: prompt('Descrição do risco:'),
                 prob: prompt('Probabilidade (Alta/Média/Baixa):', 'Média'),
                 impacto: prompt('Impacto (Alto/Médio/Baixo):', 'Médio'),
@@ -2185,8 +2129,8 @@
                 resposta: prompt('Plano de resposta:')
             };
             if (risco.descricao) {
-                if (!projetos[projetoAtual].riscos) projetos[projetoAtual].riscos = [];
-                projetos[projetoAtual].riscos.push(risco);
+                if (!projeto.riscos) projeto.riscos = [];
+                projeto.riscos.push(risco);
                 salvarDados();
                 renderizarRiscos();
                 atualizarMetricas();
@@ -2198,14 +2142,14 @@
             const tbody = document.getElementById('tbody-riscos');
             tbody.innerHTML = '';
             const projeto = projetos[projetoAtual];
-            if (projeto.riscos) {
-                projeto.riscos.forEach((r) => {
-                    const nivelClass = r.nivel === 'Crítico' ? 'bg-red-100 text-red-800' : r.nivel === 'Alto' ? 'bg-orange-100 text-orange-800' : r.nivel === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td class="px-4 py-3 font-medium">${r.id}</td><td class="px-4 py-3">${r.descricao}</td><td class="px-4 py-3">${r.prob}</td><td class="px-4 py-3">${r.impacto}</td><td class="px-4 py-3"><span class="${nivelClass} px-2 py-1 rounded text-xs font-semibold">${r.nivel}</span></td><td class="px-4 py-3">${r.resposta}</td>`;
-                    tbody.appendChild(tr);
-                });
-            }
+            if (!projeto || !projeto.riscos) return;
+            
+            projeto.riscos.forEach((r) => {
+                const nivelClass = r.nivel === 'Crítico' ? 'bg-red-100 text-red-800' : r.nivel === 'Alto' ? 'bg-orange-100 text-orange-800' : r.nivel === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="px-4 py-3 font-medium">${r.id}</td><td class="px-4 py-3">${r.descricao}</td><td class="px-4 py-3">${r.prob}</td><td class="px-4 py-3">${r.impacto}</td><td class="px-4 py-3"><span class="${nivelClass} px-2 py-1 rounded text-xs font-semibold">${r.nivel}</span></td><td class="px-4 py-3">${r.resposta}</td>`;
+                tbody.appendChild(tr);
+            });
         }
 
         // ==========================================
@@ -2213,6 +2157,8 @@
         // ==========================================
         function addReserva() {
             const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             const reservaAtual = projeto.reserva || 0;
             const valorInput = prompt(`Valor da Reserva de Contingência\n\nReserva atual: ${formatarMoeda(reservaAtual)}\nBudget total: ${formatarMoeda(projeto.orcamento)}\n\nInforme o novo valor da reserva:`, reservaAtual > 0 ? reservaAtual.toString() : '');
             if (valorInput === null) return;
@@ -2227,6 +2173,9 @@
         function editarReserva() { addReserva(); }
 
         function addTransacao() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             const data = prompt('Data (DD/MM/YYYY):', new Date().toLocaleDateString('pt-BR'));
             const descricao = prompt('Descrição:');
             if (!descricao) return;
@@ -2234,15 +2183,20 @@
             const status = confirm('Status: OK para Pago, Cancelar para Pendente') ? 'Pago' : 'Pendente';
             const valor = parseValorBrasileiro(prompt('Valor:', '0'));
             if (valor <= 0) { alert('Valor inválido!'); return; }
-            if (!projetos[projetoAtual].transacoes) projetos[projetoAtual].transacoes = [];
-            projetos[projetoAtual].transacoes.push({ data, descricao, categoria, tipo: 'Despesa', status, valor });
+            if (!projeto.transacoes) projeto.transacoes = [];
+            projeto.transacoes.push({ data, descricao, categoria, tipo: 'Despesa', status, valor });
             salvarDados();
             renderizarFinanceiro();
             atualizarMonitoramento();
         }
 
         function editTransacao(idx) {
-            const t = projetos[projetoAtual].transacoes[idx];
+            const projeto = projetos[projetoAtual];
+            if (!projeto || !projeto.transacoes) return;
+            
+            const t = projeto.transacoes[idx];
+            if (!t) return;
+            
             const novaData = prompt('Data:', t.data);
             const novaDesc = prompt('Descrição:', t.descricao);
             const novaCat = prompt('Categoria:', t.categoria);
@@ -2258,6 +2212,8 @@
             const tbody = document.getElementById('tbody-transacoes');
             tbody.innerHTML = '';
             const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+            
             let totalGastos = 0;
             if (projeto.transacoes) {
                 projeto.transacoes.forEach((t, idx) => {
@@ -2268,6 +2224,7 @@
                     tbody.appendChild(tr);
                 });
             }
+            
             const reserva = projeto.reserva || 0;
             if (reserva > 0) {
                 const trReserva = document.createElement('tr');
@@ -2275,11 +2232,13 @@
                 trReserva.innerHTML = `<td class="px-4 py-3">-</td><td class="px-4 py-3 font-medium text-amber-900">Reserva de Contingência</td><td class="px-4 py-3">Contingência</td><td class="px-4 py-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Reserva</span></td><td class="px-4 py-3"><span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">Reservado</span></td><td class="px-4 py-3 text-right font-semibold text-amber-700">${formatarMoeda(reserva)}</td><td class="px-4 py-3 text-center"><button class="text-blue-600 hover:text-blue-800 mx-1" onclick="editarReserva()"><i class="fas fa-edit"></i></button></td>`;
                 tbody.appendChild(trReserva);
             }
+            
             const orcamento = projeto.orcamento || 0;
             const totalComprometido = totalGastos + reserva;
             const saldo = orcamento - totalComprometido;
             const pctGasto = orcamento > 0 ? (totalGastos / orcamento) * 100 : 0;
             const pctSaldo = orcamento > 0 ? (saldo / orcamento) * 100 : 100;
+            
             document.getElementById('orcamento-total').textContent = formatarMoeda(orcamento);
             document.getElementById('gasto-total').textContent = formatarMoeda(totalGastos);
             document.getElementById('pct-gasto').textContent = `${pctGasto.toFixed(1)}% do budget`;
@@ -2287,13 +2246,61 @@
             document.getElementById('total-comprometido').textContent = formatarMoeda(totalComprometido);
             document.getElementById('saldo-disponivel').textContent = formatarMoeda(saldo);
             document.getElementById('pct-saldo').textContent = `${Math.max(0, pctSaldo).toFixed(1)}% livre`;
+            
             const saldoEl = document.getElementById('saldo-disponivel');
             if (saldo < 0) saldoEl.className = 'text-xl font-bold text-red-600';
             else if (saldo < orcamento * 0.1) saldoEl.className = 'text-xl font-bold text-orange-600';
             else saldoEl.className = 'text-xl font-bold text-green-900';
         }
 
-        function removeTransacao(idx) { if (confirm('Remover transação?')) { projetos[projetoAtual].transacoes.splice(idx, 1); salvarDados(); renderizarFinanceiro(); atualizarMonitoramento(); } }
+        function removeTransacao(idx) { 
+            if (confirm('Remover transação?')) { 
+                const projeto = projetos[projetoAtual];
+                if (!projeto || !projeto.transacoes) return;
+                projeto.transacoes.splice(idx, 1); 
+                salvarDados(); 
+                renderizarFinanceiro(); 
+                atualizarMonitoramento(); 
+            } 
+        }
+
+        // ==========================================
+        // FUNÇÕES DE USUÁRIOS
+        // ==========================================
+        function renderizarUsuarios() {
+            const tbody = document.getElementById('tbody-usuarios');
+            tbody.innerHTML = '';
+            const projeto = projetos[projetoAtual];
+            const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
+            
+            // Mostrar usuários do sistema (globais)
+            Object.entries(usuariosSistema).forEach(([email, usuario]) => {
+                const tr = document.createElement('tr');
+                const isAdmin = usuario.grupo === 'admin';
+                const isCurrentUser = usuarioLogado && usuarioLogado.email === email;
+                
+                const podeRedefinir = perfilAtual === 'admin' || (perfilAtual === 'supervisor' && !isAdmin) || isCurrentUser;
+                
+                tr.innerHTML = `
+                    <td class="px-4 py-3 flex items-center">
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random&size=32" class="rounded-full mr-3">
+                        <span class="font-medium">${usuario.nome}</span>
+                        ${isAdmin ? '<span class="badge-admin ml-2">Admin</span>' : ''}
+                    </td>
+                    <td class="px-4 py-3">${usuario.email}</td>
+                    <td class="px-4 py-3"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold uppercase">${usuario.grupo}</span></td>
+                    <td class="px-4 py-3 text-xs">${permissoesTexto[usuario.grupo] || 'Sem permissões'}</td>
+                    <td class="px-4 py-3 text-center">
+                        ${podeRedefinir ? `
+                            <button onclick="abrirRedefinirAdmin('${usuario.email}')" class="${isCurrentUser ? 'btn-redefinir-admin' : 'btn-redefinir'}" title="${isCurrentUser ? 'Redefinir sua senha' : 'Redefinir senha do usuário'}">
+                                <i class="fas fa-key mr-1"></i>Redefinir Senha
+                            </button>
+                        ` : '<span class="text-xs text-gray-400">-</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
         // ==========================================
         // FUNÇÕES DE PROJETO
@@ -2405,6 +2412,9 @@
             }
         }
 
+        // ==========================================
+        // MÉTRICAS E MONITORAMENTO
+        // ==========================================
         function atualizarMetricas() {
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
@@ -2492,7 +2502,6 @@
         window.onload = function() { 
             carregarUsuarios();
             popularFiltro(); 
-            // Se não houver usuário logado, mostrar modal de login
             if (!usuarioLogado) {
                 document.getElementById('login-modal').classList.add('active');
             }
