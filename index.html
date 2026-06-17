@@ -1,29 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-   <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMO Project Hub - Completo</title>
-    
-    <!-- === BIBLIOTECAS EXISTENTES === -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <!-- ⭐ NOVA BIBLIOTECA: SUPABASE -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Seus estilos existentes... -->
-    <style>
-        /* seus estilos aqui */
-    </style><
- 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PMO Project Hub - Completo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- ⭐ SUPABASE - substitua pelas suas credenciais ⭐ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .sidebar-link { transition: all 0.2s; }
@@ -79,7 +64,6 @@
         .dashboard-card .card-sub { font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; }
         .dashboard-card.purple .card-sub { color: rgba(255,255,255,0.8); }
 
-        /* Estilos para o PDF de cronograma */
         .pdf-cronograma { font-family: 'Inter', sans-serif; padding: 40px; }
         .pdf-cronograma h1 { color: #1e40af; font-size: 24px; margin-bottom: 8px; }
         .pdf-cronograma .subtitle { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
@@ -97,7 +81,6 @@
         .pdf-cronograma .status-pendente { color: #ef4444; font-weight: 600; }
         .pdf-cronograma .footer { margin-top: 24px; padding-top: 16px; border-top: 2px solid #e5e7eb; color: #9ca3af; font-size: 12px; text-align: center; }
 
-        /* Badge Admin */
         .badge-admin { background: #8b5cf6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
         .btn-redefinir { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-redefinir:hover { background: #d97706; }
@@ -155,14 +138,14 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                    <input type="email" id="login-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
+                    <input type="email" id="login-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com" value="admin@empresa.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                    <input type="password" id="login-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite sua senha">
+                    <input type="password" id="login-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite sua senha" value="admin123">
                 </div>
                 <div id="login-error" class="text-red-600 text-sm hidden">
-                    <i class="fas fa-exclamation-circle mr-1"></i> E-mail ou senha incorretos!
+                    <i class="fas fa-exclamation-circle mr-1"></i> <span id="login-error-text">E-mail ou senha incorretos!</span>
                 </div>
                 <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition">
                     <i class="fas fa-sign-in-alt mr-2"></i>Entrar
@@ -171,6 +154,12 @@
                     <a href="#" onclick="mostrarRedefinirSenha()" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
                     <span class="text-gray-400 mx-2">|</span>
                     <a href="#" onclick="mostrarCadastro()" class="text-blue-600 hover:underline">Criar conta</a>
+                </div>
+                <div class="text-center text-xs text-gray-400 mt-4 border-t pt-4">
+                    <span class="inline-flex items-center gap-1">
+                        <i class="fas fa-database text-blue-500"></i>
+                        <span id="status-banco">Usando localStorage</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -221,7 +210,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE REDEFINIÇÃO DE SENHA (para o próprio usuário) -->
+    <!-- MODAL REDEFINIR SENHA -->
     <div id="redefinir-modal" class="modal">
         <div class="modal-content bg-white p-8 max-w-md w-full">
             <div class="text-center mb-6">
@@ -256,7 +245,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE REDEFINIÇÃO DE SENHA POR ADMIN -->
+    <!-- MODAL REDEFINIR SENHA ADMIN -->
     <div id="redefinir-admin-modal" class="modal">
         <div class="modal-content bg-white p-8 max-w-md w-full">
             <div class="text-center mb-6">
@@ -305,6 +294,9 @@
                     </div>
                     <div class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md">
                         <i class="fas fa-exclamation-triangle mr-1"></i> <span id="riscos-criticos">0</span> Riscos Críticos
+                    </div>
+                    <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-3 py-2 rounded-lg text-xs font-semibold shadow-md">
+                        <i class="fas fa-database mr-1"></i> <span id="status-banco-header">Local</span>
                     </div>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-800" id="titulo-projeto">PMO Project Hub</h2>
@@ -391,6 +383,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Projeto</th>
                             <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Cliente</th>
+                            <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Gerente</th>
                             <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Budget</th>
                             <th class="px-4 py-3 text-left font-semibold text-blue-900 uppercase">Status</th>
                             <th class="px-4 py-3 text-center font-semibold text-blue-900 uppercase">Ações</th>
@@ -401,7 +394,7 @@
             </div>
         </section>
 
-        <!-- Fase de Iniciação -->
+        <!-- FASES PMBOK -->
         <section id="iniciacao" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -431,7 +424,6 @@
             </div>
         </section>
 
-        <!-- Fase de Planejamento -->
         <section id="planejamento" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -461,7 +453,6 @@
             </div>
         </section>
 
-        <!-- Fase de Execução -->
         <section id="execucao-fase" class="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-teal-500">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -491,7 +482,7 @@
             </div>
         </section>
 
-        <!-- KANBAN DA EQUIPE -->
+        <!-- KANBAN -->
         <section id="execucao" class="bg-white rounded-lg shadow-md p-6 mb-8 border-l-4 border-orange-500">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -507,7 +498,6 @@
                     </button>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-orange-50 rounded-lg">
                 <div class="text-center">
                     <p class="text-xs text-gray-600 font-medium mb-1">Total de Demandas</p>
@@ -529,7 +519,6 @@
                     <p class="text-xs text-gray-600 mt-1" id="kanban-eficiencia-texto">0%</p>
                 </div>
             </div>
-
             <div class="grid grid-cols-4 gap-2 mb-4">
                 <div>
                     <div class="flex justify-between text-xs mb-1">
@@ -568,7 +557,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="kanban-container"></div>
         </section>
 
@@ -603,7 +591,7 @@
             </div>
         </section>
 
-        <!-- Fase de Encerramento -->
+        <!-- Encerramento -->
         <section id="encerramento" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -633,7 +621,7 @@
             </div>
         </section>
 
-        <!-- Gestão Documental -->
+        <!-- Documentos -->
         <section id="documentos" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -647,7 +635,7 @@
             <ul id="lista-documentos" class="space-y-3"></ul>
         </section>
 
-        <!-- Gestão de Riscos -->
+        <!-- Riscos -->
         <section id="riscos" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -675,7 +663,7 @@
             </div>
         </section>
 
-        <!-- Gestão Financeira -->
+        <!-- Financeiro -->
         <section id="financeiro" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -691,7 +679,6 @@
                     </button>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                 <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200 finance-card">
                     <p class="text-xs text-blue-600 font-medium mb-2">Budget Total</p>
@@ -720,7 +707,6 @@
                     <p class="text-xs text-green-600 mt-2" id="pct-saldo">100% livre</p>
                 </div>
             </div>
-
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
@@ -739,7 +725,7 @@
             </div>
         </section>
 
-        <!-- Gerenciamento de Usuários -->
+        <!-- Usuários -->
         <section id="usuarios" class="bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <div>
@@ -768,7 +754,7 @@
 
     </main>
 
-    <!-- MODAL FULLSCREEN KANBAN -->
+    <!-- MODAIS ADICIONAIS -->
     <div id="kanban-fullscreen-modal" class="kanban-fullscreen">
         <div class="kanban-fullscreen-header">
             <div class="flex items-center gap-3">
@@ -792,7 +778,6 @@
         </div>
     </div>
 
-    <!-- Modal Editar Tarefa Kanban -->
     <div id="editar-kanban-modal" class="modal">
         <div class="modal-content bg-white p-6 max-w-md w-full">
             <h3 class="text-xl font-bold mb-4">Editar Tarefa</h3>
@@ -823,7 +808,6 @@
         </div>
     </div>
 
-    <!-- Modal Editar Projeto -->
     <div id="editar-projeto-modal" class="modal">
         <div class="modal-content bg-white p-6 max-w-lg w-full">
             <h3 class="text-xl font-bold mb-4">Editar Projeto</h3>
@@ -858,163 +842,33 @@
     </div>
 
     <script>
-
-               // ==========================================
-        // ⚠️ CONFIGURAÇÃO DO SUPABASE
+        // ==========================================
+        // ⭐ CONFIGURAÇÃO DO SUPABASE ⭐
         // SUBSTITUA PELAS SUAS CREDENCIAIS!
         // ==========================================
-        const SUPABASE_URL = 'sb_publishable_6FC1dhL0rg6A9G7Ji71Iyg_KbKUml01';
-        const SUPABASE_KEY = 'sb_secret_6aehKQO36vMIoeYHtqtzDw_At0Gtk09';
+        const SUPABASE_URL = 'https://gvdtyapslxphracysqge.supabase.co/rest/v1/';  // ⬅️ COLE SUA URL AQUI
+        const SUPABASE_KEY = 'sb_publishable_TMFvI5cgHDRom-wi27rTIg_jy1mB6aR';            // ⬅️ COLE SUA CHAVE AQUI
         
         // Inicializar o cliente Supabase
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase = null;
+        let usarSupabase = false;
         
+        try {
+            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            usarSupabase = true;
+            console.log('✅ Supabase inicializado!');
+            document.getElementById('status-banco').textContent = '✅ Supabase';
+            document.getElementById('status-banco-header').textContent = 'Supabase';
+        } catch(e) {
+            console.log('⚠️ Supabase não disponível, usando localStorage');
+            document.getElementById('status-banco').textContent = '📁 LocalStorage';
+            document.getElementById('status-banco-header').textContent = 'Local';
+        }
+
         // ==========================================
-        // SISTEMA DE USUÁRIOS COM SUPABASE
+        // SISTEMA DE USUÁRIOS
         // ==========================================
         let usuariosSistema = {};
-        
-        // Carregar usuários do Supabase
-        async function carregarUsuarios() {
-            try {
-                const { data, error } = await supabase
-                    .from('usuarios')
-                    .select('*');
-                
-                if (error) {
-                    console.error('Erro ao carregar usuários:', error);
-                    // Fallback para localStorage se falhar
-                    const salvos = localStorage.getItem('pmo_usuarios');
-                    if (salvos) {
-                        usuariosSistema = JSON.parse(salvos);
-                    }
-                    return;
-                }
-                
-                // Converter para o formato usado pelo sistema
-                usuariosSistema = {};
-                data.forEach(usuario => {
-                    usuariosSistema[usuario.email] = {
-                        nome: usuario.nome,
-                        grupo: usuario.grupo,
-                        senha: usuario.senha,
-                        email: usuario.email
-                    };
-                });
-                
-                // Salvar também no localStorage como fallback
-                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
-            } catch(e) {
-                console.log('Erro ao carregar usuários:', e);
-                // Fallback para localStorage
-                try {
-                    const salvos = localStorage.getItem('pmo_usuarios');
-                    if (salvos) {
-                        usuariosSistema = JSON.parse(salvos);
-                    }
-                } catch(err) {
-                    usuariosSistema = {};
-                }
-            }
-        }
-        
-        // Salvar usuários no Supabase
-            async function carregarUsuarios() {
-            try {
-                // 🔹 TENTAR CARREGAR DO SUPABASE
-                const { data, error } = await supabase
-                    .from('usuarios')
-                    .select('*');
-                
-                if (error) {
-                    console.error('Erro ao carregar usuários do Supabase:', error);
-                    // Fallback para localStorage
-                    carregarUsuariosLocal();
-                    return;
-                }
-                
-                if (data && data.length > 0) {
-                    // Converter para o formato do sistema
-                    usuariosSistema = {};
-                    data.forEach(usuario => {
-                        usuariosSistema[usuario.email] = {
-                            nome: usuario.nome,
-                            grupo: usuario.grupo,
-                            senha: usuario.senha,
-                            email: usuario.email
-                        };
-                    });
-                    
-                    // Salvar no localStorage como fallback
-                    localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
-                    console.log('Usuários carregados do Supabase:', Object.keys(usuariosSistema).length);
-                } else {
-                    // Se não há dados no Supabase, usar localStorage
-                    carregarUsuariosLocal();
-                }
-            } catch(e) {
-                console.log('Erro ao carregar usuários:', e);
-                carregarUsuariosLocal();
-            }
-        }
-
-        function carregarUsuariosLocal() {
-            try {
-                const salvos = localStorage.getItem('pmo_usuarios');
-                if (salvos) {
-                    usuariosSistema = JSON.parse(salvos);
-                } else {
-                    // Usuário padrão
-                    usuariosSistema = {
-                        'admin@empresa.com': { 
-                            nome: 'Administrador', 
-                            grupo: 'admin', 
-                            senha: 'admin123', 
-                            email: 'admin@empresa.com' 
-                        }
-                    };
-                    salvarUsuarios();
-                }
-            } catch(e) {
-                usuariosSistema = {};
-                salvarUsuarios();
-            }
-        }
-
-        async function salvarUsuarios() {
-            try {
-                // 🔹 SALVAR NO SUPABASE
-                const usuariosArray = Object.values(usuariosSistema);
-                
-                for (const usuario of usuariosArray) {
-                    const { error } = await supabase
-                        .from('usuarios')
-                        .upsert({
-                            email: usuario.email,
-                            nome: usuario.nome,
-                            grupo: usuario.grupo,
-                            senha: usuario.senha
-                        }, { onConflict: 'email' });
-                    
-                    if (error) {
-                        console.error('Erro ao salvar usuário no Supabase:', error);
-                    }
-                }
-                
-                // 🔹 SALVAR NO LOCALSTORAGE (FALLBACK)
-                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
-            } catch(e) {
-                console.log('Erro ao salvar usuários:', e);
-                // Fallback para localStorage
-                try {
-                    localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
-                } catch(err) {
-                    console.log('Erro ao salvar no localStorage:', err);
-                }
-            }
-        
-        }
-
         let usuarioLogado = null;
         let perfilAtual = null;
         let projetoAtual = 'proj1';
@@ -1104,6 +958,39 @@
         }
 
         // ==========================================
+        // FUNÇÕES DE USUÁRIOS
+        // ==========================================
+        function carregarUsuarios() {
+            try {
+                const salvos = localStorage.getItem('pmo_usuarios');
+                if (salvos) {
+                    usuariosSistema = JSON.parse(salvos);
+                } else {
+                    usuariosSistema = {
+                        'admin@empresa.com': { 
+                            nome: 'Administrador', 
+                            grupo: 'admin', 
+                            senha: 'admin123', 
+                            email: 'admin@empresa.com' 
+                        }
+                    };
+                    salvarUsuarios();
+                }
+            } catch(e) {
+                usuariosSistema = {};
+                salvarUsuarios();
+            }
+        }
+        
+        function salvarUsuarios() {
+            try {
+                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+            } catch(e) {
+                console.log('Erro ao salvar usuários:', e);
+            }
+        }
+
+        // ==========================================
         // FUNÇÕES DE LOGIN
         // ==========================================
         function toggleLogin() {
@@ -1112,82 +999,44 @@
                     usuarioLogado = null;
                     perfilAtual = null;
                     document.getElementById('login-modal').classList.add('active');
-                    document.getElementById('login-email').value = '';
-                    document.getElementById('login-senha').value = '';
+                    document.getElementById('login-email').value = 'admin@empresa.com';
+                    document.getElementById('login-senha').value = 'admin123';
                     document.getElementById('login-error').classList.add('hidden');
                     document.getElementById('login-btn-text').textContent = 'Entrar';
                     document.getElementById('user-name').textContent = 'Não logado';
                     document.getElementById('user-role').textContent = '-';
+                    document.getElementById('normal-view').style.display = 'none';
                 }
             } else {
                 document.getElementById('login-modal').classList.add('active');
+                document.getElementById('login-email').value = 'admin@empresa.com';
+                document.getElementById('login-senha').value = 'admin123';
             }
         }
 
-                async function fazerLogin() {
+        function fazerLogin() {
             const email = document.getElementById('login-email').value.trim().toLowerCase();
             const senha = document.getElementById('login-senha').value;
-            
-            // 🔹 BUSCAR USUÁRIO NO SUPABASE
-            const { data, error } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('email', email)
-                .maybeSingle();
-            
-            // Se não encontrou no Supabase, tentar no localStorage (fallback)
-            if (error || !data) {
-                // Tentar no localStorage
-                const usuarioLocal = usuariosSistema[email];
-                if (usuarioLocal && usuarioLocal.senha === senha) {
-                    // Autenticar com localStorage
-                    usuarioLogado = usuarioLocal;
-                    perfilAtual = usuarioLocal.grupo;
-                    
-                    document.getElementById('login-modal').classList.remove('active');
-                    document.getElementById('login-error').classList.add('hidden');
-                    document.getElementById('login-email').value = '';
-                    document.getElementById('login-senha').value = '';
-                    document.getElementById('login-btn-text').textContent = 'Sair';
-                    document.getElementById('user-name').textContent = usuarioLocal.nome;
-                    document.getElementById('user-role').textContent = usuarioLocal.grupo;
-                    
-                    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuarioLocal.nome)}&background=random`;
-                    document.getElementById('user-avatar').src = avatarUrl;
-                    
-                    setTimeout(() => {
-                        popularFiltro();
-                        renderizarTudo();
-                    }, 100);
-                    
-                    alert(`Bem-vindo, ${usuarioLocal.nome}! (${usuarioLocal.grupo})`);
-                    return;
-                }
-                
-                document.getElementById('login-error').classList.remove('hidden');
-                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
-                return;
-            }
-            
-            // 🔹 VERIFICAR SENHA DO SUPABASE
-            if (data.senha === senha) {
-                const usuario = {
-                    nome: data.nome,
-                    grupo: data.grupo,
-                    senha: data.senha,
-                    email: data.email
-                };
-                
+            const errorDiv = document.getElementById('login-error');
+            const errorText = document.getElementById('login-error-text');
+
+            console.log('🔍 Tentando login:', email);
+
+            // Verificar no localStorage
+            const usuario = usuariosSistema[email];
+
+            if (usuario && usuario.senha === senha) {
                 usuarioLogado = usuario;
                 perfilAtual = usuario.grupo;
                 
                 document.getElementById('login-modal').classList.remove('active');
-                document.getElementById('login-error').classList.add('hidden');
+                errorDiv.classList.add('hidden');
                 document.getElementById('login-email').value = '';
                 document.getElementById('login-senha').value = '';
                 document.getElementById('login-btn-text').textContent = 'Sair';
                 document.getElementById('user-name').textContent = usuario.nome;
                 document.getElementById('user-role').textContent = usuario.grupo;
+                document.getElementById('normal-view').style.display = 'block';
                 
                 const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random`;
                 document.getElementById('user-avatar').src = avatarUrl;
@@ -1197,45 +1046,11 @@
                     renderizarTudo();
                 }, 100);
                 
-                alert(`Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
+                alert(`✅ Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
             } else {
-                document.getElementById('login-error').classList.remove('hidden');
-                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
-            }
-        }
-            
-            // Verificar senha
-            if (data.senha === senha) {
-                const usuario = {
-                    nome: data.nome,
-                    grupo: data.grupo,
-                    senha: data.senha,
-                    email: data.email
-                };
-                
-                usuarioLogado = usuario;
-                perfilAtual = usuario.grupo;
-                
-                document.getElementById('login-modal').classList.remove('active');
-                document.getElementById('login-error').classList.add('hidden');
-                document.getElementById('login-email').value = '';
-                document.getElementById('login-senha').value = '';
-                document.getElementById('login-btn-text').textContent = 'Sair';
-                document.getElementById('user-name').textContent = usuario.nome;
-                document.getElementById('user-role').textContent = usuario.grupo;
-                
-                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random`;
-                document.getElementById('user-avatar').src = avatarUrl;
-                
-                setTimeout(() => {
-                    popularFiltro();
-                    renderizarTudo();
-                }, 100);
-                
-                alert(`Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
-            } else {
-                document.getElementById('login-error').classList.remove('hidden');
-                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
+                errorDiv.classList.remove('hidden');
+                errorText.textContent = 'E-mail ou senha incorretos!';
+                console.log('❌ Login falhou:', email);
             }
         }
 
@@ -1294,7 +1109,7 @@
             usuariosSistema[email] = { nome, grupo, senha, email };
             salvarUsuarios();
 
-            alert(`Conta criada com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
+            alert(`✅ Conta criada com sucesso!\n\nUsuário: ${nome}\nE-mail: ${email}\nGrupo: ${grupo}`);
 
             document.getElementById('cadastro-modal').classList.remove('active');
             document.getElementById('login-modal').classList.add('active');
@@ -1434,62 +1249,6 @@
                 renderizarUsuarios();
             }, 1500);
         }
-
-        // ==========================================
-        // FUNÇÃO PARA ADICIONAR USUÁRIO
-        // ==========================================
-        function addUsuario() {
-            if (perfilAtual !== 'admin' && perfilAtual !== 'supervisor') {
-                alert('Apenas Administradores e Supervisores podem adicionar usuários!');
-                return;
-            }
-
-            document.getElementById('cadastro-modal').classList.add('active');
-            document.getElementById('cadastro-error').classList.add('hidden');
-            document.getElementById('cadastro-nome').value = '';
-            document.getElementById('cadastro-email').value = '';
-            document.getElementById('cadastro-senha').value = '';
-            document.getElementById('cadastro-confirmar').value = '';
-            
-            document.querySelector('#cadastro-modal .text-center h2').textContent = 'Adicionar Novo Usuário';
-            document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para criar um novo usuário no sistema';
-        }
-
-        // Permitir login com Enter
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarUsuarios();
-            
-            const senhaInput = document.getElementById('login-senha');
-            if (senhaInput) {
-                senhaInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') fazerLogin();
-                });
-            }
-            const emailInput = document.getElementById('login-email');
-            if (emailInput) {
-                emailInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') document.getElementById('login-senha').focus();
-                });
-            }
-
-            document.getElementById('cadastro-confirmar').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') fazerCadastro();
-            });
-
-            document.getElementById('redefinir-confirmar').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') enviarRedefinicao();
-            });
-
-            document.getElementById('redefinir-admin-confirmar').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') salvarRedefinicaoAdmin();
-            });
-
-            popularFiltro();
-            
-            if (!usuarioLogado) {
-                document.getElementById('login-modal').classList.add('active');
-            }
-        });
 
         // ==========================================
         // FUNÇÕES AUXILIARES
@@ -1804,14 +1563,13 @@
         }
 
         // ==========================================
-        // RENDERIZAÇÃO DE FASES (CORRIGIDA - usa projetoAtual)
+        // RENDERIZAÇÃO DE FASES
         // ==========================================
         function renderizarFase(fase) {
             const tbody = document.getElementById(`tbody-${fase}`);
             if (!tbody) return;
             tbody.innerHTML = '';
             
-            // Garantir que estamos usando o projeto atual corretamente
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
             
@@ -1953,7 +1711,7 @@
         }
 
         // ==========================================
-        // RENDERIZAÇÃO DE KANBAN (CORRIGIDA)
+        // RENDERIZAÇÃO DE KANBAN
         // ==========================================
         function renderizarKanban() {
             const container = document.getElementById('kanban-container');
@@ -1962,7 +1720,6 @@
             const projeto = projetos[projetoAtual];
             if (!projeto) return;
             
-            // Verificar se o projeto tem kanban
             if (!projeto.kanban) {
                 projeto.kanban = { todo: [], doing: [], review: [], done: [] };
                 salvarDados();
@@ -2479,15 +2236,13 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE USUÁRIOS
+        // FUNÇÕES DE USUÁRIOS E PROJETOS
         // ==========================================
         function renderizarUsuarios() {
             const tbody = document.getElementById('tbody-usuarios');
             tbody.innerHTML = '';
-            const projeto = projetos[projetoAtual];
             const permissoesTexto = { admin: 'Acesso total', supervisao: 'Ver/Editar todos', gerente: 'Ver/Editar seus projetos', assistente: 'Ver todos, editar arquivos' };
             
-            // Mostrar usuários do sistema (globais)
             Object.entries(usuariosSistema).forEach(([email, usuario]) => {
                 const tr = document.createElement('tr');
                 const isAdmin = usuario.grupo === 'admin';
@@ -2516,9 +2271,66 @@
             });
         }
 
-        // ==========================================
-        // FUNÇÕES DE PROJETO
-        // ==========================================
+        function addUsuario() {
+            if (perfilAtual !== 'admin' && perfilAtual !== 'supervisor') {
+                alert('Apenas Administradores e Supervisores podem adicionar usuários!');
+                return;
+            }
+
+            document.getElementById('cadastro-modal').classList.add('active');
+            document.getElementById('cadastro-error').classList.add('hidden');
+            document.getElementById('cadastro-nome').value = '';
+            document.getElementById('cadastro-email').value = '';
+            document.getElementById('cadastro-senha').value = '';
+            document.getElementById('cadastro-confirmar').value = '';
+            
+            document.querySelector('#cadastro-modal .text-center h2').textContent = 'Adicionar Novo Usuário';
+            document.querySelector('#cadastro-modal .text-center p').textContent = 'Preencha os dados para criar um novo usuário no sistema';
+        }
+
+        function removerProjeto(projetoId) {
+            const projeto = projetos[projetoId];
+            if (!projeto) return;
+
+            let podeExcluir = false;
+            let motivo = '';
+
+            if (perfilAtual === 'admin' || perfilAtual === 'supervisor') {
+                podeExcluir = true;
+            } else if (perfilAtual === 'gerente' && projeto.gerente === usuarioLogado.nome) {
+                podeExcluir = true;
+            } else if (perfilAtual === 'assistente') {
+                motivo = 'Assistentes não têm permissão para excluir projetos.';
+            } else {
+                motivo = `Você não tem permissão para excluir este projeto. Apenas o gerente do projeto (${projeto.gerente}) ou um Admin/Supervisor podem excluí-lo.`;
+            }
+
+            if (!podeExcluir) {
+                alert(`⚠️ Permissão negada!\n\n${motivo}`);
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja remover o projeto "${projeto.nome}"?`)) {
+                delete projetos[projetoId];
+                salvarDados();
+                renderizarMeusProjetos();
+                popularFiltro();
+                
+                if (projetoId === projetoAtual) {
+                    const primeiroProjeto = Object.keys(projetos)[0];
+                    if (primeiroProjeto) {
+                        trocarProjeto(primeiroProjeto);
+                    } else {
+                        document.getElementById('titulo-projeto').textContent = 'Nenhum projeto disponível';
+                        document.getElementById('subtitulo-projeto').textContent = 'Crie um novo projeto para começar';
+                        document.getElementById('nome-cliente').textContent = '-';
+                    }
+                }
+                
+                alert(`Projeto "${projeto.nome}" removido com sucesso!`);
+            }
+        }
+
         function novoProjeto() {
             const nome = prompt('Nome do Projeto:'); if (!nome) return;
             const cliente = prompt('Nome do Cliente:');
@@ -2544,28 +2356,62 @@
             
             if (!usuarioLogado) return;
             
-            const projetosDoGerente = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+            let projetosParaMostrar = [];
             
-            projetosDoGerente.forEach(([id, projeto]) => {
+            if (perfilAtual === 'admin' || perfilAtual === 'supervisor') {
+                projetosParaMostrar = Object.entries(projetos);
+            } else if (perfilAtual === 'gerente') {
+                projetosParaMostrar = Object.entries(projetos).filter(([id, p]) => p.gerente === usuarioLogado.nome);
+            } else {
+                projetosParaMostrar = [];
+            }
+            
+            if (projetosParaMostrar.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                            <i class="fas fa-folder-open text-2xl block mb-2"></i>
+                            ${perfilAtual === 'assistente' ? 'Assistentes não têm acesso à lista de projetos.' : 'Nenhum projeto encontrado.'}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            projetosParaMostrar.forEach(([id, projeto]) => {
                 const statusClass = projeto.status === 'no-prazo' ? 'bg-green-100 text-green-800' :
                                    projeto.status === 'atencao' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
                 const statusText = projeto.status === 'no-prazo' ? 'No Prazo' :
                                   projeto.status === 'atencao' ? 'Atenção' : 'Crítico';
+                
+                let podeExcluir = false;
+                if (perfilAtual === 'admin' || perfilAtual === 'supervisor') {
+                    podeExcluir = true;
+                } else if (perfilAtual === 'gerente' && projeto.gerente === usuarioLogado.nome) {
+                    podeExcluir = true;
+                }
                 
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-50 transition';
                 tr.innerHTML = `
                     <td class="px-4 py-3 font-medium">${projeto.nome}</td>
                     <td class="px-4 py-3">${projeto.cliente}</td>
+                    <td class="px-4 py-3">${projeto.gerente}</td>
                     <td class="px-4 py-3 font-semibold">${formatarMoeda(projeto.orcamento)}</td>
                     <td class="px-4 py-3"><span class="${statusClass} px-2 py-1 rounded text-xs font-semibold">${statusText}</span></td>
                     <td class="px-4 py-3 text-center">
                         <button onclick="openEditarProjeto('${id}')" class="text-blue-600 hover:text-blue-800 mx-1" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="removerProjeto('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Remover">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${podeExcluir ? `
+                            <button onclick="removerProjeto('${id}')" class="text-red-600 hover:text-red-800 mx-1" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : `
+                            <span class="text-gray-400 text-xs tooltip" data-tooltip="Sem permissão para excluir">
+                                <i class="fas fa-trash opacity-30"></i>
+                            </span>
+                        `}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2575,6 +2421,18 @@
         function openEditarProjeto(projetoId) {
             const projeto = projetos[projetoId];
             if (!projeto) return;
+            
+            let podeEditar = false;
+            if (perfilAtual === 'admin' || perfilAtual === 'supervisor') {
+                podeEditar = true;
+            } else if (perfilAtual === 'gerente' && projeto.gerente === usuarioLogado.nome) {
+                podeEditar = true;
+            }
+            
+            if (!podeEditar) {
+                alert('⚠️ Você não tem permissão para editar este projeto.');
+                return;
+            }
             
             document.getElementById('edit-projeto-id').value = projetoId;
             document.getElementById('edit-projeto-nome').value = projeto.nome;
@@ -2606,24 +2464,6 @@
             trocarProjeto(projetoId);
             
             alert('Projeto atualizado com sucesso!');
-        }
-
-        function removerProjeto(projetoId) {
-            if (confirm('Tem certeza que deseja remover este projeto?')) {
-                delete projetos[projetoId];
-                salvarDados();
-                renderizarMeusProjetos();
-                popularFiltro();
-                
-                if (projetoId === projetoAtual) {
-                    const primeiroProjeto = Object.keys(projetos)[0];
-                    if (primeiroProjeto) {
-                        trocarProjeto(primeiroProjeto);
-                    }
-                }
-                
-                alert('Projeto removido com sucesso!');
-            }
         }
 
         // ==========================================
@@ -2694,7 +2534,9 @@
             document.getElementById('monitor-riscos-info').textContent = `${criticos} críticos, ${altos} altos`;
         }
 
-        // Evento de tecla ESC
+        // ==========================================
+        // EVENTOS E INICIALIZAÇÃO
+        // ==========================================
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') { 
                 closeEditarKanbanModal(); 
@@ -2712,17 +2554,34 @@
             }
         });
 
-        // Inicializar
-         window.onload = async function() { 
-            // 🔹 CARREGAR USUÁRIOS DO SUPABASE
-            await carregarUsuarios();
-            
-            // 🔹 CARREGAR PROJETOS DO SUPABASE (se tiver)
-            // await carregarProjetos();
-            
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarUsuarios();
             popularFiltro(); 
+            
+            document.getElementById('login-email').value = 'admin@empresa.com';
+            document.getElementById('login-senha').value = 'admin123';
+            
             if (!usuarioLogado) {
                 document.getElementById('login-modal').classList.add('active');
+                document.getElementById('normal-view').style.display = 'none';
+            } else {
+                document.getElementById('normal-view').style.display = 'block';
+            }
+        });
+
+        // Inicializar
+        window.onload = function() { 
+            carregarUsuarios();
+            popularFiltro(); 
+            
+            document.getElementById('login-email').value = 'admin@empresa.com';
+            document.getElementById('login-senha').value = 'admin123';
+            
+            if (!usuarioLogado) {
+                document.getElementById('login-modal').classList.add('active');
+                document.getElementById('normal-view').style.display = 'none';
+            } else {
+                document.getElementById('normal-view').style.display = 'block';
             }
         };
     </script>
