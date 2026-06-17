@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMO Project Hub - Completo</title>
+    <title>PMO Project Hub - Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- ⭐ SUPABASE - substitua pelas suas credenciais ⭐ -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; }
         .sidebar-link { transition: all 0.2s; }
         .sidebar-link:hover { background-color: rgba(255,255,255,0.1); padding-left: 1.5rem; }
         .editable-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 4px; border-radius: 4px; }
@@ -86,15 +85,22 @@
         .btn-redefinir:hover { background: #d97706; }
         .btn-redefinir-admin { background: #8b5cf6; color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-redefinir-admin:hover { background: #7c3aed; }
+        .tooltip { position: relative; display: inline-block; cursor: help; }
+        .tooltip:hover::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; z-index: 100; }
+        
+        #normal-view { display: none; }
+        #normal-view.active { display: block; }
+        .btn-limpar { background: #ef4444; color: white; padding: 6px 14px; border-radius: 8px; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-limpar:hover { background: #dc2626; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 flex h-screen overflow-hidden">
+<body>
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl fixed h-full">
         <div class="p-6 border-b border-slate-700">
             <h1 class="text-2xl font-bold text-blue-400">PMO Project Hub</h1>
-            <p class="text-xs text-slate-400 mt-1">v10.0 - Completo</p>
+            <p class="text-xs text-slate-400 mt-1">v10.0 - Supabase</p>
         </div>
         <nav class="flex-1 overflow-y-auto py-4">
             <a href="#dashboard" class="sidebar-link block px-6 py-3 text-sm font-medium"><i class="fas fa-tachometer-alt w-6"></i> Dashboard</a>
@@ -127,157 +133,8 @@
         </div>
     </aside>
 
-    <!-- MODAL DE LOGIN -->
-    <div id="login-modal" class="modal active">
-        <div class="modal-content bg-white p-8 max-w-md w-full">
-            <div class="text-center mb-6">
-                <i class="fas fa-lock text-4xl text-blue-600 mb-3"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h2>
-                <p class="text-sm text-gray-500 mt-2">Faça login para continuar</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                    <input type="email" id="login-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com" value="admin@empresa.com">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                    <input type="password" id="login-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite sua senha" value="admin123">
-                </div>
-                <div id="login-error" class="text-red-600 text-sm hidden">
-                    <i class="fas fa-exclamation-circle mr-1"></i> <span id="login-error-text">E-mail ou senha incorretos!</span>
-                </div>
-                <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Entrar
-                </button>
-                <div class="text-center text-sm">
-                    <a href="#" onclick="mostrarRedefinirSenha()" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
-                    <span class="text-gray-400 mx-2">|</span>
-                    <a href="#" onclick="mostrarCadastro()" class="text-blue-600 hover:underline">Criar conta</a>
-                </div>
-                <div class="text-center text-xs text-gray-400 mt-4 border-t pt-4">
-                    <span class="inline-flex items-center gap-1">
-                        <i class="fas fa-database text-blue-500"></i>
-                        <span id="status-banco">Usando localStorage</span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE CADASTRO -->
-    <div id="cadastro-modal" class="modal">
-        <div class="modal-content bg-white p-8 max-w-md w-full">
-            <div class="text-center mb-6">
-                <i class="fas fa-user-plus text-4xl text-green-600 mb-3"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Criar Nova Conta</h2>
-                <p class="text-sm text-gray-500 mt-2">Preencha os dados para se cadastrar</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-                    <input type="text" id="cadastro-nome" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Seu nome">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                    <input type="email" id="cadastro-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                    <input type="password" id="cadastro-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
-                    <input type="password" id="cadastro-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
-                    <select id="cadastro-grupo" class="w-full border border-gray-300 rounded px-3 py-2">
-                        <option value="gerente">Gerente</option>
-                        <option value="supervisor">Supervisor</option>
-                        <option value="assistente">Assistente</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
-                <div id="cadastro-error" class="text-red-600 text-sm hidden"></div>
-                <button onclick="fazerCadastro()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition">
-                    <i class="fas fa-user-plus mr-2"></i>Cadastrar
-                </button>
-                <div class="text-center text-sm">
-                    <a href="#" onclick="fecharModalCadastro()" class="text-gray-500 hover:underline">Voltar ao login</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL REDEFINIR SENHA -->
-    <div id="redefinir-modal" class="modal">
-        <div class="modal-content bg-white p-8 max-w-md w-full">
-            <div class="text-center mb-6">
-                <i class="fas fa-key text-4xl text-amber-600 mb-3"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha</h2>
-                <p class="text-sm text-gray-500 mt-2">Digite seu e-mail para redefinir a senha</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-                    <input type="email" id="redefinir-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
-                    <input type="password" id="redefinir-nova-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
-                    <input type="password" id="redefinir-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
-                </div>
-                <div id="redefinir-error" class="text-red-600 text-sm hidden"></div>
-                <div id="redefinir-success" class="text-green-600 text-sm hidden">
-                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
-                </div>
-                <button onclick="enviarRedefinicao()" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-semibold transition">
-                    <i class="fas fa-save mr-2"></i>Redefinir Senha
-                </button>
-                <div class="text-center text-sm">
-                    <a href="#" onclick="fecharModalRedefinir()" class="text-gray-500 hover:underline">Voltar ao login</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL REDEFINIR SENHA ADMIN -->
-    <div id="redefinir-admin-modal" class="modal">
-        <div class="modal-content bg-white p-8 max-w-md w-full">
-            <div class="text-center mb-6">
-                <i class="fas fa-user-shield text-4xl text-purple-600 mb-3"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha do Usuário</h2>
-                <p class="text-sm text-gray-500 mt-2" id="redefinir-admin-nome">Usuário: </p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
-                    <input type="password" id="redefinir-admin-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
-                    <input type="password" id="redefinir-admin-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
-                </div>
-                <div id="redefinir-admin-error" class="text-red-600 text-sm hidden"></div>
-                <div id="redefinir-admin-success" class="text-green-600 text-sm hidden">
-                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
-                </div>
-                <button onclick="salvarRedefinicaoAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition">
-                    <i class="fas fa-save mr-2"></i>Salvar Nova Senha
-                </button>
-                <div class="text-center text-sm">
-                    <a href="#" onclick="fecharModalRedefinirAdmin()" class="text-gray-500 hover:underline">Cancelar</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- VISÃO PRINCIPAL -->
-    <main class="flex-1 overflow-y-auto p-8" id="normal-view">
+    <!-- MAIN CONTENT -->
+    <main class="ml-64 flex-1 overflow-y-auto p-8" id="normal-view">
         
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -841,26 +698,234 @@
         </div>
     </div>
 
+    <!-- MODAL DE LOGIN (COM BOTÃO LIMPAR DADOS) -->
+    <div id="login-modal" class="modal active">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-lock text-4xl text-blue-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Acesso ao Sistema</h2>
+                <p class="text-sm text-gray-500 mt-2">Faça login para continuar</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="login-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com" value="admin@empresa.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="login-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite sua senha" value="admin123">
+                </div>
+                <div id="login-error" class="text-red-600 text-sm hidden">
+                    <i class="fas fa-exclamation-circle mr-1"></i> <span id="login-error-text">E-mail ou senha incorretos!</span>
+                </div>
+                <button onclick="fazerLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Entrar
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="mostrarRedefinirSenha()" class="text-blue-600 hover:underline">Esqueceu sua senha?</a>
+                    <span class="text-gray-400 mx-2">|</span>
+                    <a href="#" onclick="mostrarCadastro()" class="text-blue-600 hover:underline">Criar conta</a>
+                </div>
+                <div class="text-center text-xs text-gray-400 mt-4 border-t pt-4">
+                    <span class="inline-flex items-center gap-1">
+                        <i class="fas fa-database text-blue-500"></i>
+                        <span id="status-banco">📁 LocalStorage</span>
+                    </span>
+                </div>
+                <!-- BOTÃO LIMPAR DADOS DENTRO DO LOGIN -->
+                <div class="text-center mt-4">
+                    <button onclick="limparDados()" class="btn-limpar">
+                        <i class="fas fa-eraser mr-2"></i> Limpar Dados Locais
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CADASTRO -->
+    <div id="cadastro-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-plus text-4xl text-green-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Criar Nova Conta</h2>
+                <p class="text-sm text-gray-500 mt-2">Preencha os dados para se cadastrar</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                    <input type="text" id="cadastro-nome" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Seu nome">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="cadastro-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="cadastro-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+                    <input type="password" id="cadastro-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Grupo</label>
+                    <select id="cadastro-grupo" class="w-full border border-gray-300 rounded px-3 py-2">
+                        <option value="gerente">Gerente</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="assistente">Assistente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div id="cadastro-error" class="text-red-600 text-sm hidden"></div>
+                <button onclick="fazerCadastro()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-user-plus mr-2"></i>Cadastrar
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalCadastro()" class="text-gray-500 hover:underline">Voltar ao login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REDEFINIR SENHA -->
+    <div id="redefinir-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-key text-4xl text-amber-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha</h2>
+                <p class="text-sm text-gray-500 mt-2">Digite seu e-mail para redefinir a senha</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <input type="email" id="redefinir-email" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+                    <input type="password" id="redefinir-nova-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="redefinir-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div id="redefinir-error" class="text-red-600 text-sm hidden"></div>
+                <div id="redefinir-success" class="text-green-600 text-sm hidden">
+                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
+                </div>
+                <button onclick="enviarRedefinicao()" class="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-save mr-2"></i>Redefinir Senha
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalRedefinir()" class="text-gray-500 hover:underline">Voltar ao login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REDEFINIR SENHA ADMIN -->
+    <div id="redefinir-admin-modal" class="modal">
+        <div class="modal-content bg-white p-8 max-w-md w-full">
+            <div class="text-center mb-6">
+                <i class="fas fa-user-shield text-4xl text-purple-600 mb-3"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Redefinir Senha do Usuário</h2>
+                <p class="text-sm text-gray-500 mt-2" id="redefinir-admin-nome">Usuário: </p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nova Senha</label>
+                    <input type="password" id="redefinir-admin-senha" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="redefinir-admin-confirmar" class="w-full border border-gray-300 rounded px-3 py-2" placeholder="Digite novamente">
+                </div>
+                <div id="redefinir-admin-error" class="text-red-600 text-sm hidden"></div>
+                <div id="redefinir-admin-success" class="text-green-600 text-sm hidden">
+                    <i class="fas fa-check-circle mr-1"></i> Senha redefinida com sucesso!
+                </div>
+                <button onclick="salvarRedefinicaoAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-save mr-2"></i>Salvar Nova Senha
+                </button>
+                <div class="text-center text-sm">
+                    <a href="#" onclick="fecharModalRedefinirAdmin()" class="text-gray-500 hover:underline">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ==========================================
-        // ⭐ CONFIGURAÇÃO DO SUPABASE ⭐
-        // SUBSTITUA PELAS SUAS CREDENCIAIS!
+        // 🛡️ STORAGE SEGURO (funciona mesmo em file://
+        // ou quando o navegador bloqueia localStorage)
         // ==========================================
-        const SUPABASE_URL = 'https://gvdtyapslxphracysqge.supabase.co/rest/v1/';  // ⬅️ COLE SUA URL AQUI
+        const safeStorage = (function() {
+            let memoria = {};
+            let disponivel = false;
+            try {
+                const teste = '__teste_storage__';
+                window.localStorage.setItem(teste, '1');
+                window.localStorage.removeItem(teste);
+                disponivel = true;
+            } catch(e) {
+                console.log('⚠️ localStorage indisponível neste contexto (ex: arquivo aberto via file://). Usando memória temporária da sessão.');
+            }
+            return {
+                getItem(key) {
+                    if (disponivel) {
+                        try { return window.localStorage.getItem(key); } catch(e) { return memoria[key] ?? null; }
+                    }
+                    return memoria[key] ?? null;
+                },
+                setItem(key, value) {
+                    if (disponivel) {
+                        try { window.localStorage.setItem(key, value); return; } catch(e) { /* cai para memória */ }
+                    }
+                    memoria[key] = value;
+                },
+                removeItem(key) {
+                    if (disponivel) {
+                        try { window.localStorage.removeItem(key); } catch(e) {}
+                    }
+                    delete memoria[key];
+                },
+                clear() {
+                    if (disponivel) {
+                        try { window.localStorage.clear(); } catch(e) {}
+                    }
+                    memoria = {};
+                }
+            };
+        })();
+
+        // ==========================================
+        // ⭐ CONFIGURAÇÃO DO SUPABASE ⭐
+        // ⭐ SUBSTITUA APENAS ESTAS DUAS LINHAS ⭐
+        // ==========================================
+        const SUPABASE_URL = 'https://gvdtyapslxphracysqge.supabase.co';  // ⬅️ COLE SUA URL AQUI
         const SUPABASE_KEY = 'sb_publishable_TMFvI5cgHDRom-wi27rTIg_jy1mB6aR';            // ⬅️ COLE SUA CHAVE AQUI
-        
-        // Inicializar o cliente Supabase
-        let supabase = null;
+        // ==========================================
+        // ⭐ FIM DA SUBSTITUIÇÃO ⭐
+        // ==========================================
+
+        let supabaseClient = null;
         let usarSupabase = false;
-        
+
         try {
-            supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            usarSupabase = true;
-            console.log('✅ Supabase inicializado!');
-            document.getElementById('status-banco').textContent = '✅ Supabase';
-            document.getElementById('status-banco-header').textContent = 'Supabase';
+            if (SUPABASE_URL && SUPABASE_URL !== 'https://seu-projeto.supabase.co' && 
+                SUPABASE_KEY && SUPABASE_KEY !== 'sua-chave-anon-public' &&
+                typeof window.supabase !== 'undefined') {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                usarSupabase = true;
+                console.log('✅ Supabase configurado!');
+                document.getElementById('status-banco').textContent = '✅ Supabase';
+                document.getElementById('status-banco-header').textContent = 'Supabase';
+            } else {
+                console.log('⚠️ Supabase não configurado - usando localStorage');
+                document.getElementById('status-banco').textContent = '📁 LocalStorage';
+                document.getElementById('status-banco-header').textContent = 'Local';
+            }
         } catch(e) {
-            console.log('⚠️ Supabase não disponível, usando localStorage');
+            console.log('⚠️ Erro ao configurar Supabase - usando localStorage:', e.message);
             document.getElementById('status-banco').textContent = '📁 LocalStorage';
             document.getElementById('status-banco-header').textContent = 'Local';
         }
@@ -874,7 +939,7 @@
         let projetoAtual = 'proj1';
 
         // ==========================================
-        // DADOS INICIAIS
+        // DADOS INICIAIS DOS PROJETOS
         // ==========================================
         const projetosPadrao = {
             'proj1': { 
@@ -895,34 +960,19 @@
                     { id: '3.1', atividade: 'Desenvolvimento Backend', inicio: '2026-06-21', duracao: 15, termino: '2026-07-06', responsavel: 'João Dev', status: 'Em Andamento' }
                 ],
                 kanban: {
-                    todo: [
-                        { id: 'k1', titulo: 'Configurar ambiente', responsavel: 'João Dev', data: '2026-06-20', notas: '', avatar: 'JD' },
-                        { id: 'k2', titulo: 'Criar wireframes', responsavel: 'Ana Designer', data: '2026-06-21', notas: '', avatar: 'AD' }
-                    ],
-                    doing: [
-                        { id: 'k3', titulo: 'Desenvolver módulo auth', responsavel: 'João Dev', data: '2026-06-25', notas: 'Prioridade alta', avatar: 'JD' }
-                    ],
-                    review: [
-                        { id: 'k4', titulo: 'Testes unitários', responsavel: 'Pedro QA', data: '2026-06-22', notas: '', avatar: 'PQ' }
-                    ],
-                    done: [
-                        { id: 'k5', titulo: 'Definir arquitetura', responsavel: 'João Dev', data: '2026-06-15', notas: '', avatar: 'JD' }
-                    ]
+                    todo: [{ id: 'k1', titulo: 'Configurar ambiente', responsavel: 'João Dev', data: '2026-06-20', notas: '', avatar: 'JD' }],
+                    doing: [{ id: 'k2', titulo: 'Desenvolver módulo auth', responsavel: 'João Dev', data: '2026-06-25', notas: 'Prioridade alta', avatar: 'JD' }],
+                    review: [{ id: 'k3', titulo: 'Testes unitários', responsavel: 'Pedro QA', data: '2026-06-22', notas: '', avatar: 'PQ' }],
+                    done: [{ id: 'k4', titulo: 'Definir arquitetura', responsavel: 'João Dev', data: '2026-06-15', notas: '', avatar: 'JD' }]
                 },
                 encerramento: [],
-                documentos: [
-                    { nome: 'Termo de Abertura v2.0', tipo: 'PDF', tamanho: '2.4 MB', data: '10/06/2026', usuario: 'Carlos Silva' }
-                ],
-                riscos: [
-                    { id: 'R001', descricao: 'Atraso na entrega de APIs', prob: 'Alta', impacto: 'Alto', nivel: 'Crítico', resposta: 'Mitigar: SLA' }
-                ],
+                documentos: [{ nome: 'Termo de Abertura v2.0', tipo: 'PDF', tamanho: '2.4 MB', data: '10/06/2026', usuario: 'Carlos Silva' }],
+                riscos: [{ id: 'R001', descricao: 'Atraso na entrega de APIs', prob: 'Alta', impacto: 'Alto', nivel: 'Crítico', resposta: 'Mitigar: SLA' }],
                 transacoes: [
                     { data: '12/06/2026', descricao: 'Licença AWS', categoria: 'Infraestrutura', tipo: 'Despesa', status: 'Pago', valor: 12500 },
                     { data: '10/06/2026', descricao: 'Consultoria UX', categoria: 'Serviços', tipo: 'Despesa', status: 'Pendente', valor: 8000 }
                 ],
-                usuarios: [
-                    { nome: 'Carlos Silva', email: 'carlos@empresa.com', grupo: 'gerente' }
-                ]
+                usuarios: [{ nome: 'Carlos Silva', email: 'carlos@empresa.com', grupo: 'gerente' }]
             },
             'proj2': { 
                 nome: 'App Mobile Delivery', 
@@ -939,7 +989,7 @@
 
         let projetos = {};
         try {
-            const salvos = localStorage.getItem('pmo_projetos');
+            const salvos = safeStorage.getItem('pmo_projetos');
             if (salvos) {
                 projetos = JSON.parse(salvos);
             } else {
@@ -951,20 +1001,261 @@
 
         function salvarDados() {
             try {
-                localStorage.setItem('pmo_projetos', JSON.stringify(projetos));
+                safeStorage.setItem('pmo_projetos', JSON.stringify(projetos));
             } catch(e) {
                 console.log('Erro ao salvar:', e);
+            }
+            sincronizarComSupabase();
+        }
+
+        // ==========================================
+        // 🔄 SINCRONIZAÇÃO COM SUPABASE
+        // Estratégia: salva instantâneo localmente (UI rápida)
+        // e replica para o Supabase em segundo plano (debounced).
+        // ==========================================
+        let _syncTimeout = null;
+        function sincronizarComSupabase() {
+            if (!usarSupabase || !supabaseClient) return;
+            clearTimeout(_syncTimeout);
+            _syncTimeout = setTimeout(() => {
+                sincronizarProjetoAtual().catch(e => console.error('Erro ao sincronizar com Supabase:', e));
+            }, 600); // espera 600ms de silêncio antes de gravar, evita gravar a cada tecla
+        }
+
+        async function sincronizarProjetoAtual() {
+            if (!usarSupabase || !supabaseClient) return;
+            const id = projetoAtual;
+            const projeto = projetos[id];
+            if (!projeto || id === 'todos-meus' || id === 'todos-time') return;
+
+            // 1) Upsert do projeto (dados básicos)
+            await supabaseClient.from('projetos').upsert({
+                id,
+                nome: projeto.nome,
+                cliente: projeto.cliente,
+                gerente: projeto.gerente,
+                orcamento: projeto.orcamento || 0,
+                reserva: projeto.reserva || 0,
+                status: projeto.status || 'no-prazo'
+            });
+
+            // 2) Tarefas das 4 fases — apaga as antigas do projeto e reinsere (forma simples e segura)
+            const fases = ['iniciacao', 'planejamento', 'execucao', 'encerramento'];
+            await supabaseClient.from('tarefas').delete().eq('projeto_id', id);
+            const linhasTarefas = [];
+            fases.forEach(fase => {
+                (projeto[fase] || []).forEach(t => {
+                    linhasTarefas.push({
+                        projeto_id: id,
+                        fase,
+                        codigo: t.id || null,
+                        atividade: t.atividade || '',
+                        inicio: t.inicio || null,
+                        duracao: t.duracao || null,
+                        termino: t.termino || null,
+                        responsavel: t.responsavel || null,
+                        status: t.status || 'Pendente'
+                    });
+                });
+            });
+            if (linhasTarefas.length) await supabaseClient.from('tarefas').insert(linhasTarefas);
+
+            // 3) Kanban
+            await supabaseClient.from('kanban_tarefas').delete().eq('projeto_id', id);
+            const linhasKanban = [];
+            if (projeto.kanban) {
+                Object.entries(projeto.kanban).forEach(([coluna, tarefas]) => {
+                    (tarefas || []).forEach(t => {
+                        linhasKanban.push({
+                            projeto_id: id,
+                            coluna,
+                            titulo: t.titulo || '',
+                            responsavel: t.responsavel || null,
+                            data: t.data || null,
+                            notas: t.notas || null,
+                            avatar: t.avatar || null
+                        });
+                    });
+                });
+            }
+            if (linhasKanban.length) await supabaseClient.from('kanban_tarefas').insert(linhasKanban);
+
+            // 4) Documentos
+            await supabaseClient.from('documentos').delete().eq('projeto_id', id);
+            const linhasDocs = (projeto.documentos || []).map(d => ({
+                projeto_id: id, nome: d.nome, tipo: d.tipo, tamanho: d.tamanho, data: d.data, usuario: d.usuario
+            }));
+            if (linhasDocs.length) await supabaseClient.from('documentos').insert(linhasDocs);
+
+            // 5) Riscos
+            await supabaseClient.from('riscos').delete().eq('projeto_id', id);
+            const linhasRiscos = (projeto.riscos || []).map(r => ({
+                projeto_id: id, codigo: r.id || null, descricao: r.descricao, prob: r.prob,
+                impacto: r.impacto, nivel: r.nivel, resposta: r.resposta
+            }));
+            if (linhasRiscos.length) await supabaseClient.from('riscos').insert(linhasRiscos);
+
+            // 6) Transações financeiras
+            await supabaseClient.from('transacoes').delete().eq('projeto_id', id);
+            const linhasTransacoes = (projeto.transacoes || []).map(t => ({
+                projeto_id: id, data: t.data, descricao: t.descricao, categoria: t.categoria,
+                tipo: t.tipo || 'Despesa', status: t.status || 'Pendente', valor: t.valor || 0
+            }));
+            if (linhasTransacoes.length) await supabaseClient.from('transacoes').insert(linhasTransacoes);
+
+            // 7) Usuários do projeto (equipe)
+            await supabaseClient.from('projeto_usuarios').delete().eq('projeto_id', id);
+            const linhasUsuariosProjeto = (projeto.usuarios || []).map(u => ({
+                projeto_id: id, nome: u.nome, email: u.email, grupo: u.grupo
+            }));
+            if (linhasUsuariosProjeto.length) await supabaseClient.from('projeto_usuarios').insert(linhasUsuariosProjeto);
+
+            console.log('✅ Projeto sincronizado com Supabase:', id);
+        }
+
+        // Carrega TODOS os projetos do Supabase e popula o objeto `projetos` em memória
+        async function carregarProjetosDoSupabase() {
+            if (!usarSupabase || !supabaseClient) return false;
+            try {
+                const { data: listaProjetos, error: errP } = await supabaseClient.from('projetos').select('*');
+                if (errP) throw errP;
+                if (!listaProjetos || listaProjetos.length === 0) return false; // banco vazio, mantém dados padrão
+
+                const novosProjetos = {};
+                for (const p of listaProjetos) {
+                    novosProjetos[p.id] = {
+                        nome: p.nome, cliente: p.cliente, gerente: p.gerente,
+                        orcamento: Number(p.orcamento) || 0, reserva: Number(p.reserva) || 0,
+                        status: p.status || 'no-prazo',
+                        iniciacao: [], planejamento: [], execucao: [], encerramento: [],
+                        kanban: { todo: [], doing: [], review: [], done: [] },
+                        documentos: [], riscos: [], transacoes: [], usuarios: []
+                    };
+                }
+
+                const ids = listaProjetos.map(p => p.id);
+
+                const [tarefasRes, kanbanRes, docsRes, riscosRes, transRes, usuariosProjRes] = await Promise.all([
+                    supabaseClient.from('tarefas').select('*').in('projeto_id', ids),
+                    supabaseClient.from('kanban_tarefas').select('*').in('projeto_id', ids),
+                    supabaseClient.from('documentos').select('*').in('projeto_id', ids),
+                    supabaseClient.from('riscos').select('*').in('projeto_id', ids),
+                    supabaseClient.from('transacoes').select('*').in('projeto_id', ids),
+                    supabaseClient.from('projeto_usuarios').select('*').in('projeto_id', ids)
+                ]);
+
+                (tarefasRes.data || []).forEach(t => {
+                    const proj = novosProjetos[t.projeto_id];
+                    if (proj && proj[t.fase]) {
+                        proj[t.fase].push({
+                            id: t.codigo, atividade: t.atividade, inicio: t.inicio,
+                            duracao: t.duracao, termino: t.termino, responsavel: t.responsavel, status: t.status
+                        });
+                    }
+                });
+
+                (kanbanRes.data || []).forEach(k => {
+                    const proj = novosProjetos[k.projeto_id];
+                    if (proj && proj.kanban[k.coluna]) {
+                        proj.kanban[k.coluna].push({
+                            id: k.id, titulo: k.titulo, responsavel: k.responsavel,
+                            data: k.data, notas: k.notas, avatar: k.avatar
+                        });
+                    }
+                });
+
+                (docsRes.data || []).forEach(d => {
+                    const proj = novosProjetos[d.projeto_id];
+                    if (proj) proj.documentos.push({ nome: d.nome, tipo: d.tipo, tamanho: d.tamanho, data: d.data, usuario: d.usuario });
+                });
+
+                (riscosRes.data || []).forEach(r => {
+                    const proj = novosProjetos[r.projeto_id];
+                    if (proj) proj.riscos.push({ id: r.codigo, descricao: r.descricao, prob: r.prob, impacto: r.impacto, nivel: r.nivel, resposta: r.resposta });
+                });
+
+                (transRes.data || []).forEach(t => {
+                    const proj = novosProjetos[t.projeto_id];
+                    if (proj) proj.transacoes.push({ data: t.data, descricao: t.descricao, categoria: t.categoria, tipo: t.tipo, status: t.status, valor: Number(t.valor) || 0 });
+                });
+
+                (usuariosProjRes.data || []).forEach(u => {
+                    const proj = novosProjetos[u.projeto_id];
+                    if (proj) proj.usuarios.push({ nome: u.nome, email: u.email, grupo: u.grupo });
+                });
+
+                projetos = novosProjetos;
+                if (!projetos[projetoAtual]) projetoAtual = Object.keys(projetos)[0] || 'proj1';
+                safeStorage.setItem('pmo_projetos', JSON.stringify(projetos));
+                console.log('✅ Projetos carregados do Supabase:', Object.keys(projetos));
+                return true;
+            } catch(e) {
+                console.error('⚠️ Erro ao carregar projetos do Supabase, mantendo dados locais:', e.message);
+                return false;
             }
         }
 
         // ==========================================
-        // FUNÇÕES DE USUÁRIOS
+        // FUNÇÃO PARA LIMPAR DADOS
         // ==========================================
-        function carregarUsuarios() {
+        function limparDados() {
+            if (confirm('⚠️ Tem certeza que deseja limpar TODOS os dados locais?\n\nIsso incluirá:\n- Usuários cadastrados\n- Projetos e tarefas\n- Configurações\n\nEsta ação não pode ser desfeita!')) {
+                safeStorage.clear();
+                alert('✅ Dados limpos com sucesso!\nA página vai recarregar.');
+                location.reload();
+            }
+        }
+
+        // ==========================================
+        // CARREGAR USUÁRIOS
+        // ==========================================
+        async function carregarUsuarios() {
+            // 1) Tenta carregar do Supabase primeiro (fonte de verdade)
+            if (usarSupabase && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('usuarios').select('*');
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        usuariosSistema = {};
+                        data.forEach(u => {
+                            usuariosSistema[u.email] = { nome: u.nome, grupo: u.grupo, senha: u.senha, email: u.email };
+                        });
+                        safeStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+                        console.log('✅ Usuários carregados do Supabase:', Object.keys(usuariosSistema));
+                        if (document.getElementById('status-banco')) {
+                            document.getElementById('status-banco').textContent = '✅ Supabase';
+                        }
+                        return;
+                    } else {
+                        // Banco de usuários vazio no Supabase: cria o admin padrão lá também
+                        const adminPadrao = { email: 'admin@empresa.com', nome: 'Administrador', grupo: 'admin', senha: 'admin123' };
+                        usuariosSistema = { 'admin@empresa.com': adminPadrao };
+                        await supabaseClient.from('usuarios').upsert(adminPadrao);
+                        safeStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+                        console.log('✅ Admin padrão criado no Supabase.');
+                        return;
+                    }
+                } catch(e) {
+                    console.error('⚠️ Erro ao carregar usuários do Supabase, usando dados locais:', e.message);
+                    // cai para o fallback local abaixo
+                }
+            }
+
+            // 2) Fallback: localStorage / memória
             try {
-                const salvos = localStorage.getItem('pmo_usuarios');
+                const salvos = safeStorage.getItem('pmo_usuarios');
                 if (salvos) {
                     usuariosSistema = JSON.parse(salvos);
+                    if (!usuariosSistema['admin@empresa.com']) {
+                        console.log('⚠️ Admin não encontrado, recriando...');
+                        usuariosSistema['admin@empresa.com'] = { 
+                            nome: 'Administrador', 
+                            grupo: 'admin', 
+                            senha: 'admin123', 
+                            email: 'admin@empresa.com' 
+                        };
+                        salvarUsuarios();
+                    }
                 } else {
                     usuariosSistema = {
                         'admin@empresa.com': { 
@@ -977,16 +1268,36 @@
                     salvarUsuarios();
                 }
             } catch(e) {
-                usuariosSistema = {};
+                usuariosSistema = {
+                    'admin@empresa.com': { 
+                        nome: 'Administrador', 
+                        grupo: 'admin', 
+                        senha: 'admin123', 
+                        email: 'admin@empresa.com' 
+                    }
+                };
                 salvarUsuarios();
             }
+            console.log('✅ Usuários carregados (local):', Object.keys(usuariosSistema));
+            
+            if (document.getElementById('status-banco')) {
+                document.getElementById('status-banco').textContent = usarSupabase ? '✅ Supabase' : '📁 LocalStorage';
+            }
         }
-        
+
         function salvarUsuarios() {
             try {
-                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+                safeStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
             } catch(e) {
                 console.log('Erro ao salvar usuários:', e);
+            }
+            // Replica para o Supabase em segundo plano (não bloqueia a UI)
+            if (usarSupabase && supabaseClient) {
+                const linhas = Object.values(usuariosSistema).map(u => ({
+                    email: u.email, nome: u.nome, senha: u.senha, grupo: u.grupo
+                }));
+                supabaseClient.from('usuarios').upsert(linhas)
+                    .then(({ error }) => { if (error) console.error('⚠️ Erro ao sincronizar usuários com Supabase:', error.message); else console.log('✅ Usuários sincronizados com Supabase'); });
             }
         }
 
@@ -1005,7 +1316,7 @@
                     document.getElementById('login-btn-text').textContent = 'Entrar';
                     document.getElementById('user-name').textContent = 'Não logado';
                     document.getElementById('user-role').textContent = '-';
-                    document.getElementById('normal-view').style.display = 'none';
+                    document.getElementById('normal-view').classList.remove('active');
                 }
             } else {
                 document.getElementById('login-modal').classList.add('active');
@@ -1022,7 +1333,6 @@
 
             console.log('🔍 Tentando login:', email);
 
-            // Verificar no localStorage
             const usuario = usuariosSistema[email];
 
             if (usuario && usuario.senha === senha) {
@@ -1030,13 +1340,13 @@
                 perfilAtual = usuario.grupo;
                 
                 document.getElementById('login-modal').classList.remove('active');
-                errorDiv.classList.add('hidden');
+                document.getElementById('login-error').classList.add('hidden');
                 document.getElementById('login-email').value = '';
                 document.getElementById('login-senha').value = '';
                 document.getElementById('login-btn-text').textContent = 'Sair';
                 document.getElementById('user-name').textContent = usuario.nome;
                 document.getElementById('user-role').textContent = usuario.grupo;
-                document.getElementById('normal-view').style.display = 'block';
+                document.getElementById('normal-view').classList.add('active');
                 
                 const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random`;
                 document.getElementById('user-avatar').src = avatarUrl;
@@ -1295,107 +1605,25 @@
         }
 
         // ==========================================
-        // EXPORTAÇÃO PARA PDF
+        // FUNÇÕES DE PROJETO
         // ==========================================
-        function exportarProjeto() {
-            const projeto = projetos[projetoAtual];
-            if (!projeto) return;
-
-            const element = document.createElement('div');
-            element.className = 'pdf-cronograma';
-            
-            let html = `
-                <h1>📋 Cronograma do Projeto</h1>
-                <div class="subtitle">
-                    <strong>${projeto.nome}</strong> | ${projeto.cliente} | Gerente: ${projeto.gerente}
-                </div>
-                <div style="margin-bottom: 20px; color: #6b7280; font-size: 13px;">
-                    Budget: ${formatarMoeda(projeto.orcamento)} | Data: ${new Date().toLocaleDateString('pt-BR')}
-                </div>
-            `;
-
-            const fases = [
-                { id: 'iniciacao', titulo: '1. FASE DE INICIAÇÃO', cor: 'iniciacao' },
-                { id: 'planejamento', titulo: '2. FASE DE PLANEJAMENTO', cor: 'planejamento' },
-                { id: 'execucao', titulo: '3. FASE DE EXECUÇÃO', cor: 'execucao' },
-                { id: 'encerramento', titulo: '4. FASE DE ENCERRAMENTO', cor: 'encerramento' }
-            ];
-
-            let hasTasks = false;
-
-            fases.forEach(fase => {
-                const tarefas = projeto[fase.id] || [];
-                if (tarefas.length > 0) {
-                    hasTasks = true;
-                    html += `
-                        <div class="fase">
-                            <div class="fase-titulo ${fase.cor}">${fase.titulo}</div>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th style="width: 10%;">ID</th>
-                                        <th style="width: 35%;">Atividade</th>
-                                        <th style="width: 15%;">Início</th>
-                                        <th style="width: 10%;">Duração</th>
-                                        <th style="width: 15%;">Término</th>
-                                        <th style="width: 15%;">Responsável</th>
-                                        <th style="width: 10%;">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    
-                    tarefas.forEach(t => {
-                        const statusClass = t.status === 'Concluído' ? 'status-concluido' : 
-                                           t.status === 'Em Andamento' ? 'status-andamento' : 'status-pendente';
-                        html += `
-                            <tr>
-                                <td>${t.id}</td>
-                                <td><strong>${t.atividade}</strong></td>
-                                <td>${t.inicio || '-'}</td>
-                                <td>${t.duracao || '-'}</td>
-                                <td>${t.termino || '-'}</td>
-                                <td>${t.responsavel || '-'}</td>
-                                <td class="${statusClass}">${t.status || 'Pendente'}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    html += `
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                }
-            });
-
-            if (!hasTasks) {
-                html += `
-                    <div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 16px;">
-                        <i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
-                        Nenhuma tarefa cadastrada nas fases do projeto.
-                    </div>
-                `;
+        function novoProjeto() {
+            const nome = prompt('Nome do Projeto:'); if (!nome) return;
+            const cliente = prompt('Nome do Cliente:');
+            const gerente = prompt('Gerente Responsável:', usuarioLogado?.nome || '');
+            const orcamento = parseValorBrasileiro(prompt('Budget do Projeto:', '0'));
+            const reserva = parseValorBrasileiro(prompt('Reserva de Contingência (opcional):', '0'));
+            if (cliente) {
+                const novoId = 'proj' + (Object.keys(projetos).length + 1);
+                projetos[novoId] = { nome, cliente, gerente: gerente || usuarioLogado?.nome || '', orcamento, reserva: reserva || 0, status: 'no-prazo', iniciacao: [], planejamento: [], execucao: [], encerramento: [], kanban: { todo: [], doing: [], review: [], done: [] }, documentos: [], riscos: [], transacoes: [], usuarios: [{ nome: gerente || usuarioLogado?.nome || '', email: 'gerente@empresa.com', grupo: 'gerente' }] };
+                salvarDados();
+                const select = document.getElementById('filtro-projeto');
+                const option = document.createElement('option');
+                option.value = novoId; option.textContent = `${nome} - ${cliente}`;
+                select.appendChild(option);
+                trocarProjeto(novoId);
+                alert(`Projeto "${nome}" criado!\nBudget: ${formatarMoeda(orcamento)}\nReserva: ${formatarMoeda(reserva || 0)}`);
             }
-
-            html += `
-                <div class="footer">
-                    Documento gerado automaticamente pelo PMO Project Hub<br>
-                    ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
-                </div>
-            `;
-
-            element.innerHTML = html;
-
-            const opt = {
-                margin: [10, 10, 10, 10],
-                filename: `Cronograma_${projeto.nome.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save();
         }
 
         // ==========================================
@@ -2236,7 +2464,7 @@
         }
 
         // ==========================================
-        // FUNÇÕES DE USUÁRIOS E PROJETOS
+        // FUNÇÕES DE USUÁRIOS
         // ==========================================
         function renderizarUsuarios() {
             const tbody = document.getElementById('tbody-usuarios');
@@ -2328,25 +2556,6 @@
                 }
                 
                 alert(`Projeto "${projeto.nome}" removido com sucesso!`);
-            }
-        }
-
-        function novoProjeto() {
-            const nome = prompt('Nome do Projeto:'); if (!nome) return;
-            const cliente = prompt('Nome do Cliente:');
-            const gerente = prompt('Gerente Responsável:', usuarioLogado?.nome || '');
-            const orcamento = parseValorBrasileiro(prompt('Budget do Projeto:', '0'));
-            const reserva = parseValorBrasileiro(prompt('Reserva de Contingência (opcional):', '0'));
-            if (cliente) {
-                const novoId = 'proj' + (Object.keys(projetos).length + 1);
-                projetos[novoId] = { nome, cliente, gerente: gerente || usuarioLogado?.nome || '', orcamento, reserva: reserva || 0, status: 'no-prazo', iniciacao: [], planejamento: [], execucao: [], encerramento: [], kanban: { todo: [], doing: [], review: [], done: [] }, documentos: [], riscos: [], transacoes: [], usuarios: [{ nome: gerente || usuarioLogado?.nome || '', email: 'gerente@empresa.com', grupo: 'gerente' }] };
-                salvarDados();
-                const select = document.getElementById('filtro-projeto');
-                const option = document.createElement('option');
-                option.value = novoId; option.textContent = `${nome} - ${cliente}`;
-                select.appendChild(option);
-                trocarProjeto(novoId);
-                alert(`Projeto "${nome}" criado!\nBudget: ${formatarMoeda(orcamento)}\nReserva: ${formatarMoeda(reserva || 0)}`);
             }
         }
 
@@ -2467,6 +2676,110 @@
         }
 
         // ==========================================
+        // EXPORTAÇÃO PARA PDF
+        // ==========================================
+        function exportarProjeto() {
+            const projeto = projetos[projetoAtual];
+            if (!projeto) return;
+
+            const element = document.createElement('div');
+            element.className = 'pdf-cronograma';
+            
+            let html = `
+                <h1>📋 Cronograma do Projeto</h1>
+                <div class="subtitle">
+                    <strong>${projeto.nome}</strong> | ${projeto.cliente} | Gerente: ${projeto.gerente}
+                </div>
+                <div style="margin-bottom: 20px; color: #6b7280; font-size: 13px;">
+                    Budget: ${formatarMoeda(projeto.orcamento)} | Data: ${new Date().toLocaleDateString('pt-BR')}
+                </div>
+            `;
+
+            const fases = [
+                { id: 'iniciacao', titulo: '1. FASE DE INICIAÇÃO', cor: 'iniciacao' },
+                { id: 'planejamento', titulo: '2. FASE DE PLANEJAMENTO', cor: 'planejamento' },
+                { id: 'execucao', titulo: '3. FASE DE EXECUÇÃO', cor: 'execucao' },
+                { id: 'encerramento', titulo: '4. FASE DE ENCERRAMENTO', cor: 'encerramento' }
+            ];
+
+            let hasTasks = false;
+
+            fases.forEach(fase => {
+                const tarefas = projeto[fase.id] || [];
+                if (tarefas.length > 0) {
+                    hasTasks = true;
+                    html += `
+                        <div class="fase">
+                            <div class="fase-titulo ${fase.cor}">${fase.titulo}</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">ID</th>
+                                        <th style="width: 35%;">Atividade</th>
+                                        <th style="width: 15%;">Início</th>
+                                        <th style="width: 10%;">Duração</th>
+                                        <th style="width: 15%;">Término</th>
+                                        <th style="width: 15%;">Responsável</th>
+                                        <th style="width: 10%;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    tarefas.forEach(t => {
+                        const statusClass = t.status === 'Concluído' ? 'status-concluido' : 
+                                           t.status === 'Em Andamento' ? 'status-andamento' : 'status-pendente';
+                        html += `
+                            <tr>
+                                <td>${t.id}</td>
+                                <td><strong>${t.atividade}</strong></td>
+                                <td>${t.inicio || '-'}</td>
+                                <td>${t.duracao || '-'}</td>
+                                <td>${t.termino || '-'}</td>
+                                <td>${t.responsavel || '-'}</td>
+                                <td class="${statusClass}">${t.status || 'Pendente'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasTasks) {
+                html += `
+                    <div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 16px;">
+                        <i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
+                        Nenhuma tarefa cadastrada nas fases do projeto.
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="footer">
+                    Documento gerado automaticamente pelo PMO Project Hub<br>
+                    ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}
+                </div>
+            `;
+
+            element.innerHTML = html;
+
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `Cronograma_${projeto.nome.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        // ==========================================
         // MÉTRICAS E MONITORAMENTO
         // ==========================================
         function atualizarMetricas() {
@@ -2554,36 +2867,25 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            carregarUsuarios();
-            popularFiltro(); 
-            
-            document.getElementById('login-email').value = 'admin@empresa.com';
-            document.getElementById('login-senha').value = 'admin123';
-            
-            if (!usuarioLogado) {
-                document.getElementById('login-modal').classList.add('active');
-                document.getElementById('normal-view').style.display = 'none';
-            } else {
-                document.getElementById('normal-view').style.display = 'block';
+        async function inicializarApp() {
+            await carregarUsuarios();
+            if (usarSupabase) {
+                await carregarProjetosDoSupabase();
             }
-        });
+            popularFiltro();
 
-        // Inicializar
-        window.onload = function() { 
-            carregarUsuarios();
-            popularFiltro(); 
-            
             document.getElementById('login-email').value = 'admin@empresa.com';
             document.getElementById('login-senha').value = 'admin123';
-            
+
             if (!usuarioLogado) {
                 document.getElementById('login-modal').classList.add('active');
-                document.getElementById('normal-view').style.display = 'none';
+                document.getElementById('normal-view').classList.remove('active');
             } else {
-                document.getElementById('normal-view').style.display = 'block';
+                document.getElementById('normal-view').classList.add('active');
             }
-        };
+        }
+
+        document.addEventListener('DOMContentLoaded', inicializarApp);
     </script>
 </body>
 </html>
