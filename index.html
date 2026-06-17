@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+   <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMO Project Hub - Completo</title>
+    
+    <!-- === BIBLIOTECAS EXISTENTES === -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- ⭐ NOVA BIBLIOTECA: SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Seus estilos existentes... -->
+    <style>
+        /* seus estilos aqui */
+    </style><
+ 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PMO Project Hub - Completo</title>
@@ -842,24 +859,112 @@
 
     <script>
 
-        // ==========================================
+               // ==========================================
         // ⚠️ CONFIGURAÇÃO DO SUPABASE
         // SUBSTITUA PELAS SUAS CREDENCIAIS!
         // ==========================================
         const SUPABASE_URL = 'sb_publishable_6FC1dhL0rg6A9G7Ji71Iyg_KbKUml01';
-        const SUPABASE_KEY = 'sb_secret_sq_vRtQ_MpaNtJMrU2L6Qg_zaquYGOi';
-
+        const SUPABASE_KEY = 'sb_secret_6aehKQO36vMIoeYHtqtzDw_At0Gtk09';
+        
+        // Inicializar o cliente Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         // ==========================================
-        // SISTEMA DE USUÁRIOS COM SENHA
+        // SISTEMA DE USUÁRIOS COM SUPABASE
         // ==========================================
         let usuariosSistema = {};
         
-        function carregarUsuarios() {
+        // Carregar usuários do Supabase
+        async function carregarUsuarios() {
+            try {
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select('*');
+                
+                if (error) {
+                    console.error('Erro ao carregar usuários:', error);
+                    // Fallback para localStorage se falhar
+                    const salvos = localStorage.getItem('pmo_usuarios');
+                    if (salvos) {
+                        usuariosSistema = JSON.parse(salvos);
+                    }
+                    return;
+                }
+                
+                // Converter para o formato usado pelo sistema
+                usuariosSistema = {};
+                data.forEach(usuario => {
+                    usuariosSistema[usuario.email] = {
+                        nome: usuario.nome,
+                        grupo: usuario.grupo,
+                        senha: usuario.senha,
+                        email: usuario.email
+                    };
+                });
+                
+                // Salvar também no localStorage como fallback
+                localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+            } catch(e) {
+                console.log('Erro ao carregar usuários:', e);
+                // Fallback para localStorage
+                try {
+                    const salvos = localStorage.getItem('pmo_usuarios');
+                    if (salvos) {
+                        usuariosSistema = JSON.parse(salvos);
+                    }
+                } catch(err) {
+                    usuariosSistema = {};
+                }
+            }
+        }
+        
+        // Salvar usuários no Supabase
+            async function carregarUsuarios() {
+            try {
+                // 🔹 TENTAR CARREGAR DO SUPABASE
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select('*');
+                
+                if (error) {
+                    console.error('Erro ao carregar usuários do Supabase:', error);
+                    // Fallback para localStorage
+                    carregarUsuariosLocal();
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    // Converter para o formato do sistema
+                    usuariosSistema = {};
+                    data.forEach(usuario => {
+                        usuariosSistema[usuario.email] = {
+                            nome: usuario.nome,
+                            grupo: usuario.grupo,
+                            senha: usuario.senha,
+                            email: usuario.email
+                        };
+                    });
+                    
+                    // Salvar no localStorage como fallback
+                    localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+                    console.log('Usuários carregados do Supabase:', Object.keys(usuariosSistema).length);
+                } else {
+                    // Se não há dados no Supabase, usar localStorage
+                    carregarUsuariosLocal();
+                }
+            } catch(e) {
+                console.log('Erro ao carregar usuários:', e);
+                carregarUsuariosLocal();
+            }
+        }
+
+        function carregarUsuariosLocal() {
             try {
                 const salvos = localStorage.getItem('pmo_usuarios');
                 if (salvos) {
                     usuariosSistema = JSON.parse(salvos);
                 } else {
+                    // Usuário padrão
                     usuariosSistema = {
                         'admin@empresa.com': { 
                             nome: 'Administrador', 
@@ -875,13 +980,39 @@
                 salvarUsuarios();
             }
         }
-        
-        function salvarUsuarios() {
+
+        async function salvarUsuarios() {
             try {
+                // 🔹 SALVAR NO SUPABASE
+                const usuariosArray = Object.values(usuariosSistema);
+                
+                for (const usuario of usuariosArray) {
+                    const { error } = await supabase
+                        .from('usuarios')
+                        .upsert({
+                            email: usuario.email,
+                            nome: usuario.nome,
+                            grupo: usuario.grupo,
+                            senha: usuario.senha
+                        }, { onConflict: 'email' });
+                    
+                    if (error) {
+                        console.error('Erro ao salvar usuário no Supabase:', error);
+                    }
+                }
+                
+                // 🔹 SALVAR NO LOCALSTORAGE (FALLBACK)
                 localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
             } catch(e) {
                 console.log('Erro ao salvar usuários:', e);
+                // Fallback para localStorage
+                try {
+                    localStorage.setItem('pmo_usuarios', JSON.stringify(usuariosSistema));
+                } catch(err) {
+                    console.log('Erro ao salvar no localStorage:', err);
+                }
             }
+        
         }
 
         let usuarioLogado = null;
@@ -993,12 +1124,95 @@
             }
         }
 
-        function fazerLogin() {
+                async function fazerLogin() {
             const email = document.getElementById('login-email').value.trim().toLowerCase();
             const senha = document.getElementById('login-senha').value;
-            const usuario = usuariosSistema[email];
-
-            if (usuario && usuario.senha === senha) {
+            
+            // 🔹 BUSCAR USUÁRIO NO SUPABASE
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('email', email)
+                .maybeSingle();
+            
+            // Se não encontrou no Supabase, tentar no localStorage (fallback)
+            if (error || !data) {
+                // Tentar no localStorage
+                const usuarioLocal = usuariosSistema[email];
+                if (usuarioLocal && usuarioLocal.senha === senha) {
+                    // Autenticar com localStorage
+                    usuarioLogado = usuarioLocal;
+                    perfilAtual = usuarioLocal.grupo;
+                    
+                    document.getElementById('login-modal').classList.remove('active');
+                    document.getElementById('login-error').classList.add('hidden');
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-senha').value = '';
+                    document.getElementById('login-btn-text').textContent = 'Sair';
+                    document.getElementById('user-name').textContent = usuarioLocal.nome;
+                    document.getElementById('user-role').textContent = usuarioLocal.grupo;
+                    
+                    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuarioLocal.nome)}&background=random`;
+                    document.getElementById('user-avatar').src = avatarUrl;
+                    
+                    setTimeout(() => {
+                        popularFiltro();
+                        renderizarTudo();
+                    }, 100);
+                    
+                    alert(`Bem-vindo, ${usuarioLocal.nome}! (${usuarioLocal.grupo})`);
+                    return;
+                }
+                
+                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
+                return;
+            }
+            
+            // 🔹 VERIFICAR SENHA DO SUPABASE
+            if (data.senha === senha) {
+                const usuario = {
+                    nome: data.nome,
+                    grupo: data.grupo,
+                    senha: data.senha,
+                    email: data.email
+                };
+                
+                usuarioLogado = usuario;
+                perfilAtual = usuario.grupo;
+                
+                document.getElementById('login-modal').classList.remove('active');
+                document.getElementById('login-error').classList.add('hidden');
+                document.getElementById('login-email').value = '';
+                document.getElementById('login-senha').value = '';
+                document.getElementById('login-btn-text').textContent = 'Sair';
+                document.getElementById('user-name').textContent = usuario.nome;
+                document.getElementById('user-role').textContent = usuario.grupo;
+                
+                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(usuario.nome)}&background=random`;
+                document.getElementById('user-avatar').src = avatarUrl;
+                
+                setTimeout(() => {
+                    popularFiltro();
+                    renderizarTudo();
+                }, 100);
+                
+                alert(`Bem-vindo, ${usuario.nome}! (${usuario.grupo})`);
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('login-error').textContent = 'E-mail ou senha incorretos!';
+            }
+        }
+            
+            // Verificar senha
+            if (data.senha === senha) {
+                const usuario = {
+                    nome: data.nome,
+                    grupo: data.grupo,
+                    senha: data.senha,
+                    email: data.email
+                };
+                
                 usuarioLogado = usuario;
                 perfilAtual = usuario.grupo;
                 
@@ -2499,8 +2713,13 @@
         });
 
         // Inicializar
-        window.onload = function() { 
-            carregarUsuarios();
+         window.onload = async function() { 
+            // 🔹 CARREGAR USUÁRIOS DO SUPABASE
+            await carregarUsuarios();
+            
+            // 🔹 CARREGAR PROJETOS DO SUPABASE (se tiver)
+            // await carregarProjetos();
+            
             popularFiltro(); 
             if (!usuarioLogado) {
                 document.getElementById('login-modal').classList.add('active');
