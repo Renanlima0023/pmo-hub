@@ -2702,15 +2702,13 @@
                 { id: 'encerramento', titulo: '4. FASE DE ENCERRAMENTO', cor: 'encerramento' }
             ];
 
-            let hasTasks = false;
-
             fases.forEach(fase => {
                 const tarefas = projeto[fase.id] || [];
+                html += `<div class="fase">
+                            <div class="fase-titulo ${fase.cor}">${fase.titulo}</div>`;
+
                 if (tarefas.length > 0) {
-                    hasTasks = true;
                     html += `
-                        <div class="fase">
-                            <div class="fase-titulo ${fase.cor}">${fase.titulo}</div>
                             <table>
                                 <thead>
                                     <tr>
@@ -2725,7 +2723,7 @@
                                 </thead>
                                 <tbody>
                     `;
-                    
+
                     tarefas.forEach(t => {
                         const statusClass = t.status === 'Concluído' ? 'status-concluido' : 
                                            t.status === 'Em Andamento' ? 'status-andamento' : 'status-pendente';
@@ -2741,23 +2739,21 @@
                             </tr>
                         `;
                     });
-                    
+
                     html += `
                                 </tbody>
                             </table>
-                        </div>
+                    `;
+                } else {
+                    html += `
+                            <div style="padding: 16px; text-align: center; color: #9ca3af; font-size: 13px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px;">
+                                Nenhuma tarefa cadastrada nesta fase.
+                            </div>
                     `;
                 }
-            });
 
-            if (!hasTasks) {
-                html += `
-                    <div style="text-align: center; padding: 40px; color: #9ca3af; font-size: 16px;">
-                        <i class="fas fa-inbox" style="font-size: 48px; display: block; margin-bottom: 16px;"></i>
-                        Nenhuma tarefa cadastrada nas fases do projeto.
-                    </div>
-                `;
-            }
+                html += `</div>`;
+            });
 
             html += `
                 <div class="footer">
